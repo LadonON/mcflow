@@ -31,6 +31,13 @@ release_url = "https://github.com/mauriziofonte/toktoken/releases/download/v0.5.
 "macos-aarch64" = { file = "toktoken-macos-aarch64", sha256 = "0aa45d6763e1208e591dbf8ae8318bb08121dd508eb3a2b53d82378bc088407f" }
 "windows-x86_64" = { file = "toktoken-win-x86_64.exe", sha256 = "4c01fc57b41a99dde533076ebc0b43acdc894c9b246426715b2a8259a1d187ca" }
 
+[viaversion]
+# Hangar (PaperMC's official plugin repository), Release channel
+version = "5.12.2"
+url = "https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.12.2/PAPER/ViaVersion-5.12.2.jar"
+sha256 = "c0b63badcb0f7d38f4443e06820f2b8142dd4f0d3b0511f9330ff1050430e6b2"
+minimum_java = 17
+
 [humanizer]
 repo = "blader/humanizer"
 commit = "b48c832f0f809c1b5658edbb838c2521b72f2413"

@@ -22,6 +22,8 @@ kb_app = typer.Typer(
     help="Sync the knowledge base with the shared GitHub repo.", no_args_is_help=True
 )
 app.add_typer(kb_app, name="kb")
+server_app = typer.Typer(help="Set up the local test server.", no_args_is_help=True)
+app.add_typer(server_app, name="server")
 
 console = Console(soft_wrap=True)
 err = Console(stderr=True, soft_wrap=True)
@@ -161,6 +163,54 @@ def doctor_cmd(
         doctor.render(results, console)
     if any(r.status is doctor.Status.FAIL for r in results):
         raise typer.Exit(1)
+
+
+def _require_project() -> tuple[Path, ProjectConfig]:
+    root = find_project_root(Path.cwd())
+    if root is None:
+        err.print(
+            "[red]Not inside an mcflow workspace.[/] Run this from a folder made by `mcflow init`."
+        )
+        raise typer.Exit(1)
+    return root, load(root)
+
+
+@server_app.command("setup")
+def server_setup(
+    accept_eula: Annotated[
+        bool,
+        typer.Option(
+            "--accept-eula",
+            help="Record that the user accepted the Minecraft EULA (https://aka.ms/MinecraftEULA). "
+            "Only pass this after the user has said yes.",
+        ),
+    ] = False,
+) -> None:
+    """Check the Paper jar, pick Java, and configure server/ for local-only testing."""
+    from mcflow.testserver import setup
+
+    root, config = _require_project()
+    try:
+        result = setup.run(root, config, accept_eula=accept_eula)
+    except setup.SetupError as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+
+    s = result.settings
+    console.print(f"[green]Test server ready[/] for Paper {result.jar.minecraft_version}.")
+    console.print(f"  Paper jar:    server/{result.jar.path.name}")
+    console.print(f"  Java:         {result.java_version} ({s.java})")
+    console.print(f"  Address:      127.0.0.1:{s.server_port} (offline mode, local only)")
+    console.print(f"  RCON:         127.0.0.1:{s.rcon_port}, password in .mcflow/local.toml")
+    console.print(f"  Pack server:  http://127.0.0.1:{s.pack_port}/")
+    console.print(f"  ViaVersion:   {pins()['viaversion']['version']} ({result.viaversion})")
+    for note in result.notes:
+        console.print(f"  [yellow]{note}[/]")
+    if not result.eula_accepted:
+        console.print(
+            "\n[yellow]The server won't start until the Minecraft EULA is accepted.[/] "
+            "Read https://aka.ms/MinecraftEULA, then rerun with --accept-eula."
+        )
 
 
 def _not_yet(command: str, stage: str) -> None:
