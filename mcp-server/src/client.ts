@@ -24,10 +24,11 @@ export interface BridgeInfo {
 export interface ClientStatus {
   minecraft: string;
   inWorld: boolean;
-  server: string | null;
-  player: string | null;
-  screen: string | null;
-  screenTitle: string | null;
+  // Older mod builds leave null fields out, so treat missing as null.
+  server?: string | null;
+  player?: string | null;
+  screen?: string | null;
+  screenTitle?: string | null;
   windowWidth: number;
   windowHeight: number;
 }

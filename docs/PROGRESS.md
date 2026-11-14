@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 2: in progress.** Research is done for 2.1 (server language) and 2.2 (real-client options). Server setup, mcflow-server (server control and client tools) and the Fabric mod (1.21.11 and 26.3) are built and unit-tested. **Next: the live prototype on the user's machine (task 2.24)**, which needs the user's Paper jar, their EULA answer, permission to install into their `.minecraft`, and the user to start and sign in to Minecraft.
+**Stage 2: in progress.** Research is done for 2.1 (server language) and 2.2 (real-client options). Server setup, mcflow-server (server control and client tools) and the Fabric mod (1.21.11 and 26.3) are built and unit-tested. **The live prototype passed (2026-11-14)**: the user's real, signed-in Minecraft 26.3 with mcflow's mod joined the local Paper 26.3 server, ran player commands, opened the inventory (slots read back as JSON) and took screenshots, saved to `server/screenshots/stage2-prototype/`. Remaining: 2.23 (release and npm), 2.24a (clean screenshots), 2.25 (OS limits), 2.26 (full version range), then the checkpoint.
 
 ## Session log
 
@@ -68,12 +68,19 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Client mod has no Fabric API and no mixins (2026-11-14):** fewer things break per version. The only per-version code is `Compat.java` (screen getter/setter, main render target).
 - **Client mod safety (2026-11-14):** it only joins loopback servers, and acts and takes screenshots only while connected to one. Resource packs are auto-accepted only from those servers.
 
+- **Official-launcher installs get their own game folder (2026-11-14):** `.minecraft/mcflow/<version>/`, set as the launcher profile's gameDir. The first real install found about 100 Forge 1.19.2 mods in the user's `.minecraft/mods`, which must never be mixed with mcflow's Fabric install.
+
 ## Findings
 
 - **Paper's Fill v3 API** gives each version's minimum Java and support status, but no maximum Java, so mcflow pins no maximum.
 - **TokToken's smart filter skips YAML, XML, TOML, CSS, HTML and SVG by default.** This matters for the unsupported-language flow in Stage 5.
 - **TokToken has no Windows ARM64 build.** `doctor` reports this.
 - **Minecraft 26.3 API changes vs 1.21.11** (checked with javap): the screen getter and setter moved to `Minecraft.gui` (`gui.screen()`, `gui.setScreen()`), and the main render target moved to `gameRenderer.mainRenderTarget()`. `ConnectScreen.startConnecting`, `ServerData`, `Screenshot.takeScreenshot`, `ClientPacketListener.sendCommand/sendChat`, `InventoryScreen` and the container and slot APIs are unchanged.
+- **Bugs the live prototype found (all fixed, with regression tests):**
+  1. Paper 26.3 defaults to `white-list=true`, which kicked the user's own client. Setup now turns the whitelist off (the server is localhost-only).
+  2. Minecraft's Gson drops null fields, so `"screen": null` arrived as a missing field and `client_join` never saw "no screen". The mod now serialises nulls, and the server treats missing as null.
+  3. Minecraft pauses when its window loses focus, which is most of the time while mcflow drives it. The mod turns `pauseOnLostFocus` off (in mcflow's own game folder) and closes the pause menu before any command.
+  4. **`latest.log` uses a different line format from the console** (`[14:15:13] [Server thread/INFO]:` vs `[14:15:13 INFO]:`). The parser only knew the console format, so every log read came back empty, and the "no exceptions" gate would have passed silently. Tests now use lines copied from a real log.
 - **The wiki's server.properties page sits behind a bot check**, which we don't try to get around. Paper's own reference covers the keys we need.
 
 ## Open questions

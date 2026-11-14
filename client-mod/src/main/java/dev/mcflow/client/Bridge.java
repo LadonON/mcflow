@@ -1,6 +1,7 @@
 package dev.mcflow.client;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -32,7 +33,8 @@ import java.util.concurrent.TimeUnit;
  * user who runs the game, and deleted when the game exits.
  */
 final class Bridge {
-    private static final Gson GSON = new Gson();
+    // Keep null fields: mcflow-server reads "screen": null as "no screen open".
+    private static final Gson GSON = new GsonBuilder().serializeNulls().create();
     private static final long COMMAND_TIMEOUT_SECONDS = 30;
 
     private final ServerSocket socket;

@@ -125,6 +125,7 @@ def test_setup_configures_a_local_only_server(workspace, fake_env, via_pin):
     assert props["rcon.password"] == result.settings.rcon_password
     assert len(result.settings.rcon_password) >= 24
     assert props["require-resource-pack"] == "true"
+    assert props["white-list"] == "false"
     assert props["rcon.port"] == str(result.settings.rcon_port)
 
     assert "jdk-21" in result.settings.java, "lowest JDK meeting both Paper and ViaVersion"

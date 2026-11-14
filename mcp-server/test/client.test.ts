@@ -3,7 +3,7 @@ import { createServer, Server } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { attach, BridgeClient, loadClientState, screenshotPath } from "../src/client.js";
+import { attach, BridgeClient, loadClientState, screenshotPath, waitFor } from "../src/client.js";
 import type { Workspace } from "../src/workspace.js";
 
 /** Speaks the mod's protocol (Bridge.java): one JSON object per line, token checked on every request. */
@@ -20,6 +20,7 @@ function fakeMod(token: string): Promise<{ server: Server; port: number }> {
           buffer = buffer.slice(i + 1);
           let reply: object;
           if (req.token !== token) reply = { id: req.id, ok: false, error: "bad token" };
+          // Like mod 0.1.0's first build: Gson dropped null fields, so "screen" is simply absent.
           else if (req.command === "status") reply = { id: req.id, ok: true, result: { minecraft: "26.3", inWorld: true } };
           else reply = { id: req.id, ok: false, error: `unknown command: ${req.command}` };
           socket.write(JSON.stringify(reply) + "\n");
@@ -73,6 +74,15 @@ describe("BridgeClient", () => {
     const ws = workspaceWithClient(gameDir);
     const client = await attach(loadClientState(ws), 0);
     expect(await client.call("status")).toMatchObject({ inWorld: true });
+    client.close();
+  });
+
+  it("treats a missing screen field as no screen open", async () => {
+    const fake = await fakeMod("secret");
+    server = fake.server;
+    const client = await BridgeClient.open({ port: fake.port, token: "secret", pid: 1, minecraft: "26.3", mod: "0.1.0" });
+    const status = await waitFor(client, (s) => s.inWorld && !s.screen, 2000, "join");
+    expect(status.inWorld).toBe(true);
     client.close();
   });
 

@@ -14,6 +14,7 @@ import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.ConnectScreen;
+import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -80,6 +81,10 @@ final class Commands {
             throw new CommandException("connected to " + host + ", which isn't on this computer; mcflow only controls "
                     + "the client on local test servers");
         }
+        // The user is usually in another window while mcflow drives the game, so a pause menu may be open.
+        if (Compat.currentScreen(mc) instanceof PauseScreen) {
+            Compat.setScreen(mc, null);
+        }
     }
 
     private JsonElement status() {
@@ -111,6 +116,12 @@ final class Commands {
                 return already;
             }
             throw new CommandException("already in a world; quit to the title screen before joining another server");
+        }
+        // Without this the game pauses whenever its window loses focus, which is most of the time while mcflow
+        // drives it. The setting lives in mcflow's own game folder, so the user's other installs keep theirs.
+        if (mc.options.pauseOnLostFocus) {
+            mc.options.pauseOnLostFocus = false;
+            mc.options.save();
         }
         ServerData data = new ServerData("mcflow test server", address, ServerData.Type.OTHER);
         // Accept the server's resource pack without the prompt. Only ever applied to local servers (checked above).

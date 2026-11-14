@@ -2,8 +2,10 @@
 
 import { existsSync, readFileSync } from "node:fs";
 
-// Paper/vanilla console lines start with "[HH:MM:SS LEVEL]:" (optionally with a thread name).
-const ENTRY_START = /^\[(\d\d:\d\d:\d\d)\s+(?:[^\]]*\/)?([A-Z]+)\]/;
+// Two formats start an entry:
+//   logs/latest.log (file):   "[14:15:13] [Server thread/INFO]: ..."
+//   console (stdout):         "[14:15:13 INFO]: ..."
+const ENTRY_START = /^\[(\d\d:\d\d:\d\d)(?:\s+([A-Z]+))?\](?:\s*\[[^\]]*\/([A-Z]+)\])?/;
 const STACK_LINE = /^\s+at |^Caused by: |^\s+\.\.\. \d+ more|^[\w$.]+(?:Exception|Error)(?::|$)/;
 
 export interface LogEntry {
@@ -27,11 +29,11 @@ export function parseEntries(lines: string[], firstLineNumber = 1): LogEntry[] {
     const line = raw.replace(/\r$/, "");
     const match = ENTRY_START.exec(line);
     const last = entries[entries.length - 1];
-    if (match) {
+    if (match && (match[2] ?? match[3])) {
       entries.push({
         line: firstLineNumber + i,
         time: match[1] ?? "",
-        level: match[2] ?? "",
+        level: match[2] ?? match[3] ?? "",
         text: line,
         hasStackTrace: false,
       });

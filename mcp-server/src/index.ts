@@ -261,7 +261,8 @@ mcp.registerTool(
         await bridge.call("connect", { address: `127.0.0.1:${s.serverPort}` });
         const status = await waitFor(
           bridge,
-          (st) => st.inWorld && st.screen === null,
+          // A pause menu (the window lost focus) counts as joined: the mod closes it before the next command.
+          (st) => st.inWorld && (!st.screen || st.screen === "PauseScreen"),
           timeoutSeconds * 1000,
           "the client to join and load the resource pack",
         );

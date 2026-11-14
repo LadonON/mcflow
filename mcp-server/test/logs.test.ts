@@ -15,6 +15,26 @@ const SAMPLE = [
   "[12:00:07 INFO]: Done (6.123s)! For help, type \"help\"",
 ];
 
+// Copied from a real Paper 26.3 logs/latest.log (2026-11-14); the file uses a different format from the
+// console. The stack trace follows the shape Paper writes when a plugin fails to enable.
+const REAL_FILE = [
+  '[14:14:44] [Server thread/INFO]: Done (11.024s)! For help, type "help"',
+  "[14:15:12] [Server thread/INFO]: System chat: Doom_950 joined the game",
+  "[14:15:13] [Server thread/INFO]: Doom_950 issued server command: /say Hello from mcflow's real client",
+  "[14:15:20] [Server thread/ERROR]: Error occurred while enabling ShinySwords v1.0 (Is it up to date?)",
+  "java.lang.IllegalStateException: boom",
+  "\tat com.example.shiny.Shiny.onEnable(Shiny.java:42) ~[ShinySwords.jar:?]",
+];
+
+describe("parseEntries on the real latest.log format", () => {
+  it("reads entries, levels and stack traces", () => {
+    const entries = parseEntries(REAL_FILE);
+    expect(entries.map((e) => e.level)).toEqual(["INFO", "INFO", "INFO", "ERROR"]);
+    expect(entries[2]?.text).toContain("issued server command");
+    expect(entries[3]?.hasStackTrace).toBe(true);
+  });
+});
+
 describe("parseEntries", () => {
   it("groups stack traces with the line that logged them", () => {
     const entries = parseEntries(SAMPLE);
@@ -25,8 +45,8 @@ describe("parseEntries", () => {
     expect(error.text).toContain("Shiny.java:42");
   });
 
-  it("understands thread-prefixed levels", () => {
-    const [entry] = parseEntries(["[12:00:01 Server thread/WARN]: something"]);
+  it("reads the console format too", () => {
+    const [entry] = parseEntries(["[12:00:01 WARN]: something"]);
     expect(entry?.level).toBe("WARN");
   });
 });

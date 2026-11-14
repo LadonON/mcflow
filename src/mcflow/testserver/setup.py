@@ -147,6 +147,10 @@ def run(
             "server-port": str(settings.server_port),
             "online-mode": "false",
             "enforce-secure-profile": "false",
+            # Paper 26.3 turns the whitelist on by default. On a localhost-only test server it only
+            # blocks the user's own client and test bots.
+            "white-list": "false",
+            "enforce-whitelist": "false",
             "enable-rcon": "true",
             "rcon.port": str(settings.rcon_port),
             "rcon.password": settings.rcon_password,
