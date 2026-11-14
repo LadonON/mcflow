@@ -1,7 +1,9 @@
 """`mcflow client install`: put mcflow's Fabric mod, and Fabric Loader where we can, into Minecraft.
 
 Layouts we recognise:
-  official launcher  .minecraft with launcher_profiles.json. We run Fabric's official installer.
+  official launcher  .minecraft with launcher_profiles.json. We run Fabric's official installer and
+                     give its installation a separate game folder, .minecraft/mcflow/<version>/,
+                     so the user's own mods, worlds and settings are never mixed with mcflow's.
   Prism / MultiMC    an instance folder with mmc-pack.json; the game folder is .minecraft/ or
                      minecraft/ inside it. Fabric is added in the launcher (we check and explain).
   anything else      a game folder. We copy the mod and say what's left to do.
@@ -33,6 +35,9 @@ class Layout:
     kind: str  # "official", "prism", "other"
     game_dir: Path  # where mods/ lives and where the mod writes mcflow/bridge.json
     instance_dir: Path | None = None  # Prism/MultiMC instance folder
+    launcher_dir: Path | None = (
+        None  # official launcher: the .minecraft with launcher_profiles.json
+    )
 
 
 @dataclass
@@ -65,16 +70,51 @@ def detect(path: Path) -> Layout:
     if path.name in (".minecraft", "minecraft") and (path.parent / "mmc-pack.json").is_file():
         return Layout("prism", path, instance_dir=path.parent)
     if (path / "launcher_profiles.json").is_file() or (path / "versions").is_dir():
-        return Layout("official", path)
+        return Layout("official", path, launcher_dir=path)
     return Layout("other", path)
 
 
-def official_has_fabric(game_dir: Path, minecraft: str) -> bool:
-    versions = game_dir / "versions"
-    return versions.is_dir() and any(
-        d.name.startswith("fabric-loader-") and d.name.endswith(f"-{minecraft}")
+def official_fabric_version(launcher_dir: Path, minecraft: str) -> str | None:
+    """Installed Fabric version id for this Minecraft version, e.g. fabric-loader-0.20.1-26.3."""
+    versions = launcher_dir / "versions"
+    if not versions.is_dir():
+        return None
+    found = sorted(
+        d.name
         for d in versions.iterdir()
+        if d.name.startswith("fabric-loader-") and d.name.endswith(f"-{minecraft}")
     )
+    return found[-1] if found else None
+
+
+def official_dedicated_game_dir(launcher_dir: Path, minecraft: str) -> Path:
+    return launcher_dir / "mcflow" / minecraft
+
+
+def set_official_profile(
+    launcher_dir: Path, version_id: str, game_dir: Path, minecraft: str
+) -> str:
+    """Point the launcher installation for version_id at game_dir, creating it if needed.
+
+    launcher_profiles.json is backed up first. Returns the installation's display name.
+    """
+    path = launcher_dir / "launcher_profiles.json"
+    original = path.read_text(encoding="utf-8") if path.is_file() else "{}"
+    if path.is_file():
+        (launcher_dir / "launcher_profiles.json.mcflow-backup").write_text(
+            original, encoding="utf-8"
+        )
+    data = json.loads(original)
+    profiles = data.setdefault("profiles", {})
+    name = f"mcflow {minecraft} (Fabric)"
+    key = next((k for k, p in profiles.items() if p.get("lastVersionId") == version_id), None)
+    if key is None:
+        key = f"mcflow-{minecraft}"
+        profiles[key] = {"type": "custom", "icon": "Furnace", "lastVersionId": version_id}
+    profiles[key]["name"] = name
+    profiles[key]["gameDir"] = str(game_dir)
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return name
 
 
 def prism_has_fabric(instance_dir: Path) -> bool:
@@ -202,6 +242,8 @@ def install(
             )
 
     jar = mod_jar_for(minecraft, local_jar)
+    if layout.kind == "official":
+        layout.game_dir = official_dedicated_game_dir(layout.game_dir, minecraft)
     mods = layout.game_dir / "mods"
     mods.mkdir(parents=True, exist_ok=True)
     for old in mods.glob(f"{MOD_PREFIX}*.jar"):
@@ -214,26 +256,28 @@ def install(
     target.write_bytes(jar.read_bytes())
 
     result = InstallResult(layout, target, fabric="unknown")
-    if layout.kind == "official":
-        if official_has_fabric(layout.game_dir, minecraft):
+    if layout.kind == "official" and layout.launcher_dir is not None:
+        version_id = official_fabric_version(layout.launcher_dir, minecraft)
+        if version_id:
             result.fabric = "already installed"
         elif java is None:
             raise InstallError(
                 "Installing Fabric needs Java. Run `mcflow doctor` for the install command."
             )
         else:
-            installer(layout.game_dir, minecraft, java)
+            installer(layout.launcher_dir, minecraft, java)
             result.fabric = "installed"
-        result.steps_for_user.append(
-            f"In the Minecraft Launcher, pick the "
-            f'"fabric-loader-{pins()["fabric"]["loader_version"]}-{minecraft}" '
-            "installation and press Play."
-        )
-        if layout.game_dir != default_game_dir():
-            result.steps_for_user.append(
-                f"Point that installation's game directory at {layout.game_dir} "
-                "(Installations, Edit, More options)."
+            version_id = official_fabric_version(layout.launcher_dir, minecraft)
+        if version_id is None:
+            raise InstallError(
+                "Fabric's installer ran but no Fabric version appeared in versions/."
             )
+        name = set_official_profile(layout.launcher_dir, version_id, layout.game_dir, minecraft)
+        result.steps_for_user.append(
+            f'In the Minecraft Launcher, pick the "{name}" installation and press Play. '
+            f"It uses its own game folder ({layout.game_dir}), so your other installations, "
+            "mods and worlds are untouched."
+        )
     elif layout.kind == "prism":
         if layout.instance_dir is not None and prism_has_fabric(layout.instance_dir):
             result.fabric = "already installed"

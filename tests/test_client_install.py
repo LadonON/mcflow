@@ -41,9 +41,18 @@ class FakeInstaller:
     def __init__(self):
         self.calls = []
 
-    def __call__(self, game_dir, minecraft, java):
-        self.calls.append((game_dir, minecraft, java))
-        (game_dir / "versions" / f"fabric-loader-0.20.1-{minecraft}").mkdir()
+    def __call__(self, launcher_dir, minecraft, java):
+        """Does what Fabric's installer does: a version folder plus a launcher profile."""
+        self.calls.append((launcher_dir, minecraft, java))
+        version = f"fabric-loader-0.20.1-{minecraft}"
+        (launcher_dir / "versions" / version).mkdir()
+        path = launcher_dir / "launcher_profiles.json"
+        data = json.loads(path.read_text()) if path.read_text().strip() else {}
+        data.setdefault("profiles", {})[f"fabric-loader-{minecraft}"] = {
+            "name": f"fabric-loader-{minecraft}",
+            "lastVersionId": version,
+        }
+        path.write_text(json.dumps(data))
 
 
 # --- layout detection ---
@@ -69,22 +78,37 @@ def test_missing_folder_is_explained(tmp_path):
 # --- installing ---
 
 
-def test_official_install_copies_mod_and_runs_fabric_installer(tmp_path):
+def test_official_install_uses_its_own_game_folder(tmp_path):
     game = official_dir(tmp_path)
+    (game / "launcher_profiles.json").write_text(
+        json.dumps({"profiles": {"forge": {"name": "My modpack", "lastVersionId": "1.19.2-forge"}}})
+    )
     (game / "mods").mkdir()
-    (game / "mods" / "mcflow-client-0.0.9+1.21.11.jar").write_text("old")
+    (game / "mods" / "create-1.19.2.jar").write_text("the user's own mod")
     jar = make_mod_jar(tmp_path / "build" / "mcflow-client-0.1.0+1.21.11.jar", "1.21.11")
     fake = FakeInstaller()
 
     result = install.install(game, "1.21.11", Path("/java"), local_jar=jar, installer=fake)
 
-    assert [p.name for p in (game / "mods").iterdir()] == ["mcflow-client-0.1.0+1.21.11.jar"]
+    dedicated = game / "mcflow" / "1.21.11"
+    assert result.layout.game_dir == dedicated
+    assert [p.name for p in (dedicated / "mods").iterdir()] == ["mcflow-client-0.1.0+1.21.11.jar"]
+    assert [p.name for p in (game / "mods").iterdir()] == ["create-1.19.2.jar"], (
+        "user's mods untouched"
+    )
     assert result.fabric == "installed"
     assert fake.calls == [(game, "1.21.11", Path("/java"))]
-    assert any("fabric-loader-0.20.1-1.21.11" in s for s in result.steps_for_user)
+
+    profiles = json.loads((game / "launcher_profiles.json").read_text())["profiles"]
+    assert profiles["forge"] == {"name": "My modpack", "lastVersionId": "1.19.2-forge"}
+    ours = profiles["fabric-loader-1.21.11"]
+    assert ours["gameDir"] == str(dedicated)
+    assert ours["name"] == "mcflow 1.21.11 (Fabric)"
+    assert (game / "launcher_profiles.json.mcflow-backup").is_file()
+    assert any("mcflow 1.21.11 (Fabric)" in s for s in result.steps_for_user)
 
 
-def test_official_install_skips_fabric_when_present(tmp_path):
+def test_official_install_reuses_existing_fabric_and_adds_a_profile(tmp_path):
     game = official_dir(tmp_path)
     (game / "versions" / "fabric-loader-0.19.0-26.3").mkdir()
     jar = make_mod_jar(tmp_path / "m.jar", "26.3")
@@ -92,6 +116,20 @@ def test_official_install_skips_fabric_when_present(tmp_path):
     result = install.install(game, "26.3", Path("/java"), local_jar=jar, installer=fake)
     assert result.fabric == "already installed"
     assert fake.calls == []
+    profile = json.loads((game / "launcher_profiles.json").read_text())["profiles"]["mcflow-26.3"]
+    assert profile["lastVersionId"] == "fabric-loader-0.19.0-26.3"
+    assert profile["gameDir"] == str(game / "mcflow" / "26.3")
+
+
+def test_rerunning_replaces_the_old_mod_jar(tmp_path):
+    game = official_dir(tmp_path)
+    (game / "versions" / "fabric-loader-0.20.1-26.3").mkdir()
+    old_mods = game / "mcflow" / "26.3" / "mods"
+    old_mods.mkdir(parents=True)
+    (old_mods / "mcflow-client-0.0.9+26.3.jar").write_text("old")
+    jar = make_mod_jar(tmp_path / "m.jar", "26.3")
+    install.install(game, "26.3", Path("/java"), local_jar=jar, installer=FakeInstaller())
+    assert [p.name for p in old_mods.iterdir()] == ["mcflow-client-0.1.0+26.3.jar"]
 
 
 def test_prism_without_fabric_tells_user_how_to_add_it(tmp_path):
