@@ -1,0 +1,40 @@
+# Every third-party version mcflow depends on, verified against official sources.
+# Sources and dates: docs/research/Stage 1 Toolchain and Version Pins.md
+# Change a pin only after checking the tool's current docs, and update that research doc too.
+
+[paper]
+# Oldest Paper version mcflow supports (project decision, 2026-11-14).
+minimum_version = "1.17"
+fill_api = "https://fill.papermc.io/v3/projects/paper/versions"
+# Lowest LTS release recommended when a Paper version needs Java N.
+java_lts = [17, 21, 25]
+
+[node]
+minimum_major = 18
+
+[universal_ctags]
+version_marker = "Universal Ctags"
+rejected_marker = "Exuberant Ctags"
+
+[toktoken]
+version = "0.5.0"
+repo = "mauriziofonte/toktoken"
+license = "AGPL-3.0"
+release_url = "https://github.com/mauriziofonte/toktoken/releases/download/v0.5.0/"
+
+# platform key = "<os>-<machine>" as normalised by mcflow.platforms
+[toktoken.assets]
+"linux-x86_64" = { file = "toktoken-linux-x86_64", sha256 = "cbc4c5bacdf455c8eb9ebe16b69687e908b97c372786ba0fb7fecb027e49fcde" }
+"linux-aarch64" = { file = "toktoken-linux-aarch64", sha256 = "fef145b6f3ddff3aec4ba7ec4cb85641023a8329fe7317e952a59ee68a647bc8" }
+"linux-armv7" = { file = "toktoken-linux-armv7", sha256 = "57ff68245067000df89a40ac4b0a7c80aaf81a3617385f6c56cf97460f9478c1" }
+"macos-x86_64" = { file = "toktoken-macos-x86_64", sha256 = "5ac1b9c18f6f5f9d21325f9f4e24518fbafb525134200e846fd7d0b85ece8333" }
+"macos-aarch64" = { file = "toktoken-macos-aarch64", sha256 = "0aa45d6763e1208e591dbf8ae8318bb08121dd508eb3a2b53d82378bc088407f" }
+"windows-x86_64" = { file = "toktoken-win-x86_64.exe", sha256 = "4c01fc57b41a99dde533076ebc0b43acdc894c9b246426715b2a8259a1d187ca" }
+
+[humanizer]
+repo = "blader/humanizer"
+commit = "b48c832f0f809c1b5658edbb838c2521b72f2413"
+license = "MIT"
+
+[knowledge]
+default_repo = "LadonON/mcflow-knowledge"

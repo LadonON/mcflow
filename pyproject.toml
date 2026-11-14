@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling>=1.33"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcflow-cli"
+description = "AI development workflow for production Paper plugins with custom resource packs"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [{ name = "LadonON" }]
+dynamic = ["version"]
+keywords = ["minecraft", "paper", "plugin", "resource-pack", "claude-code", "mcp"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Environment :: Console",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Code Generators",
+]
+dependencies = [
+  "typer>=0.29,<1",
+  "rich>=15,<16",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=9.2,<10",
+  "ruff>=0.17,<0.18",
+]
+
+[project.urls]
+Repository = "https://github.com/LadonON/mcflow"
+
+[project.scripts]
+mcflow = "mcflow.cli:app"
+
+[tool.hatch.version]
+path = "src/mcflow/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcflow"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

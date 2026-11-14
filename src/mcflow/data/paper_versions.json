@@ -1,0 +1,161 @@
+{
+  "fetched": "2026-11-14",
+  "source": "https://fill.papermc.io/v3/projects/paper/versions",
+  "versions": [
+    {
+      "id": "26.3",
+      "java_minimum": 25,
+      "supported": true
+    },
+    {
+      "id": "26.2",
+      "java_minimum": 25,
+      "supported": false
+    },
+    {
+      "id": "26.1.2",
+      "java_minimum": 25,
+      "supported": false
+    },
+    {
+      "id": "26.1.1",
+      "java_minimum": 25,
+      "supported": false
+    },
+    {
+      "id": "1.21.11",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.10",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.9",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.8",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.7",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.6",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.5",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.4",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.3",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21.1",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.21",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.20.6",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.20.5",
+      "java_minimum": 21,
+      "supported": false
+    },
+    {
+      "id": "1.20.4",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.20.2",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.20.1",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.20",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.19.4",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.19.3",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.19.2",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.19.1",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.19",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.18.2",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.18.1",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.18",
+      "java_minimum": 17,
+      "supported": false
+    },
+    {
+      "id": "1.17.1",
+      "java_minimum": 16,
+      "supported": false
+    },
+    {
+      "id": "1.17",
+      "java_minimum": 16,
+      "supported": false
+    }
+  ]
+}

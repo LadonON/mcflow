@@ -1,0 +1,19 @@
+# Local secrets (RCON password and similar). Never commit these.
+.mcflow/
+
+# Test server: only the README is tracked. The Paper jar, worlds, logs and screenshots stay local.
+server/*
+!server/README.md
+
+# Build output
+build/
+.gradle/
+out/
+*.class
+
+# Editors and OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db

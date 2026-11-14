@@ -1,0 +1,111 @@
+{
+  "versions": [
+    {
+      "version": {
+        "id": "26.3",
+        "support": {
+          "status": "SUPPORTED"
+        },
+        "java": {
+          "version": {
+            "minimum": 25
+          }
+        }
+      }
+    },
+    {
+      "version": {
+        "id": "26.3-rc-3",
+        "support": {
+          "status": "UNSUPPORTED",
+          "end": "2026-09-15"
+        },
+        "java": {
+          "version": {
+            "minimum": 25
+          }
+        }
+      }
+    },
+    {
+      "version": {
+        "id": "26.1.1",
+        "support": {
+          "status": "UNSUPPORTED",
+          "end": "2026-04-11"
+        },
+        "java": {
+          "version": {
+            "minimum": 25
+          }
+        }
+      }
+    },
+    {
+      "version": {
+        "id": "1.21.11",
+        "support": {
+          "status": "UNSUPPORTED",
+          "end": "2026-06-15"
+        },
+        "java": {
+          "version": {
+            "minimum": 21
+          }
+        }
+      }
+    },
+    {
+      "version": {
+        "id": "1.20.4",
+        "support": {
+          "status": "UNSUPPORTED"
+        },
+        "java": {
+          "version": {
+            "minimum": 17
+          }
+        }
+      }
+    },
+    {
+      "version": {
+        "id": "1.17",
+        "support": {
+          "status": "UNSUPPORTED"
+        },
+        "java": {
+          "version": {
+            "minimum": 16
+          }
+        }
+      }
+    },
+    {
+      "version": {
+        "id": "1.16.5",
+        "support": {
+          "status": "UNSUPPORTED"
+        },
+        "java": {
+          "version": {
+            "minimum": 8
+          }
+        }
+      }
+    },
+    {
+      "version": {
+        "id": "1.8.8",
+        "support": {
+          "status": "UNSUPPORTED"
+        },
+        "java": {
+          "version": {
+            "minimum": 8
+          }
+        }
+      }
+    }
+  ]
+}
