@@ -38,6 +38,21 @@ url = "https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.12.
 sha256 = "c0b63badcb0f7d38f4443e06820f2b8142dd4f0d3b0511f9330ff1050430e6b2"
 minimum_java = 17
 
+[fabric]
+# Official Fabric installer (maven.fabricmc.net); SHA-256 matches the maven's own .sha256 file.
+installer_version = "1.1.2"
+installer_url = "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.1.2/fabric-installer-1.1.2.jar"
+installer_sha256 = "61e035bf7bf70153e127440ce34de47c9036f0a2d0c65d1529454bd35ceefe4f"
+loader_version = "0.20.1"
+
+[client_mod]
+# mcflow's own Fabric client mod (client-mod/ in this repo). Users must install it.
+version = "0.1.0"
+minecraft_versions = ["1.21.11", "26.3"]
+# Filled in when the mod is released on GitHub; until then install a local build with --jar.
+release_url = ""
+sha256 = {}
+
 [humanizer]
 repo = "blader/humanizer"
 commit = "b48c832f0f809c1b5658edbb838c2521b72f2413"

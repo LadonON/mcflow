@@ -83,30 +83,30 @@ Labels: **[you]** is a task the user has to do. **[research]** means check the c
 - [x] 2.3 **[you]** Real client: our own Fabric mod (user decision). Language: TypeScript. Node 22+
 
 ### 2B. Test-server setup (section 3)
-- [ ] 2.4 First-run flow: ask for the Paper version, then ask the user to put a Paper jar in `server/`
-- [ ] 2.5 Paper jar check: inspect the manifest or the classes inside the jar, and read its version
-- [ ] 2.6 **[research]** ViaVersion: its official distribution, the API to download it, and version compatibility
-- [ ] 2.7 Install ViaVersion
-- [ ] 2.8 Generate `server.properties`: localhost only, offline mode, RCON with a random password in a git-ignored file, `require-resource-pack`, and accept the EULA only after the user explicitly agrees
-- [ ] 2.9 Choose the Java version for the server (this reuses `doctor`'s Java detection)
+- [x] 2.4 First-run flow: ask for the Paper version, then ask the user to put a Paper jar in `server/`
+- [x] 2.5 Paper jar check: inspect the manifest or the classes inside the jar, and read its version
+- [x] 2.6 **[research]** ViaVersion: its official distribution, the API to download it, and version compatibility
+- [x] 2.7 Install ViaVersion
+- [x] 2.8 Generate `server.properties`: localhost only, offline mode, RCON with a random password in a git-ignored file, `require-resource-pack`, and accept the EULA only after the user explicitly agrees
+- [x] 2.9 Choose the Java version for the server (this reuses `doctor`'s Java detection)
 
 ### 2C. Server-control tools
-- [ ] 2.10 MCP server skeleton, registered in the `.mcp.json` template
-- [ ] 2.11 `server_start`, `server_stop`, `server_restart` and `server_status` (process management that works on every OS)
-- [ ] 2.12 `server_command`, using an RCON client
-- [ ] 2.13 `server_logs(since, filter)`, which also detects exceptions and stack traces
-- [ ] 2.14 `plugin_deploy(project)`: Gradle build, copy the jar, then a clean restart (never `/reload`)
-- [ ] 2.15 **[research]** Resource-pack zip rules, the SHA-1 requirement, and how `pack_format` maps to versions
-- [ ] 2.16 `resourcepack_build_and_serve(pack)`: validate, zip, compute the SHA-1, serve it over local HTTP and update `server.properties`
-- [ ] 2.17 Tests for each tool, plus a README
+- [x] 2.10 MCP server skeleton, registered in the `.mcp.json` template
+- [x] 2.11 `server_start`, `server_stop`, `server_restart` and `server_status` (process management that works on every OS)
+- [x] 2.12 `server_command`, using an RCON client
+- [x] 2.13 `server_logs(since, filter)`, which also detects exceptions and stack traces
+- [x] 2.14 `plugin_deploy(project)`: Gradle build, copy the jar, then a clean restart (never `/reload`)
+- [x] 2.15 **[research]** Resource-pack zip rules, the SHA-1 requirement, and how `pack_format` maps to versions
+- [x] 2.16 `resourcepack_build_and_serve(pack)`: validate, zip, compute the SHA-1, serve it over local HTTP and update `server.properties`
+- [x] 2.17 Tests for each tool, plus a README
 
 ### 2D. Real client: mcflow's Fabric mod
-- [ ] 2.18 Set up the `client-mod/` Gradle project with Stonecutter, building **1.21.11 (obfuscated) and 26.3 (unobfuscated)** first, with no Fabric API dependency
-- [ ] 2.19 Shared core: loopback TCP control socket (127.0.0.1, random token, line-delimited JSON), plus a token and port file in the game folder
-- [ ] 2.20 Version-specific commands: join (localhost only), run a chat command, screenshot to a path, open the inventory, list the screen's widgets, accept the localhost resource pack, quit
-- [ ] 2.21 MCP tools `client_launch` (wait for the game, or launch through Prism if available), `client_join`, `client_run`, `client_screenshot`, `client_open_inventory`, `client_quit`, saving to `server/screenshots/<task>/<label>.png`
-- [ ] 2.22 `mcflow client install <instance-dir>`: detect the launcher layout, copy the matching mod jar, and install Fabric Loader for the official launcher. The workflow (CLAUDE.md, `doctor`) says the mod is **required**
-- [ ] 2.23 CI: build the mod jars and attach them to GitHub releases, with their SHA-256 pinned in `versions.toml`
+- [x] 2.18 Set up the `client-mod/` Gradle project with Stonecutter, building **1.21.11 (obfuscated) and 26.3 (unobfuscated)** first, with no Fabric API dependency
+- [x] 2.19 Shared core: loopback TCP control socket (127.0.0.1, random token, line-delimited JSON), plus a token and port file in the game folder
+- [x] 2.20 Version-specific commands: join (localhost only), run a chat command, screenshot to a path, open the inventory, list the screen's widgets, accept the localhost resource pack, quit
+- [x] 2.21 MCP tools `client_launch` (wait for the game, or launch through Prism if available), `client_join`, `client_run`, `client_screenshot`, `client_open_inventory`, `client_quit`, saving to `server/screenshots/<task>/<label>.png`
+- [x] 2.22 `mcflow client install <instance-dir>`: detect the launcher layout, copy the matching mod jar, and install Fabric Loader for the official launcher. The workflow (CLAUDE.md, `doctor`) says the mod is **required**
+- [~] 2.23 CI builds the mod jars (done). Still to do: attach them to a GitHub release and pin the SHA-256 in `versions.toml`, then publish mcflow-server to npm and have `mcflow init` register it in `.mcp.json`
 - [ ] 2.24 **[you]** Prototype on your machine: sign in through your launcher, join the local server, take a screenshot
 - [ ] 2.25 Write down the limits per OS (a visible window on Windows and macOS, Xvfb on Linux)
 - [ ] 2.26 Extend the mod to every Fabric version from 1.17 to the newest (this can move to a later stage if the range proves hard)

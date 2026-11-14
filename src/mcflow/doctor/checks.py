@@ -1,9 +1,11 @@
 """Doctor checks. Each returns a CheckResult, with an exact fix when something's wrong."""
 
 import re
+import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 
 from mcflow.doctor import java
 from mcflow.doctor.env import SystemEnv
@@ -29,6 +31,7 @@ class CheckResult:
 class DoctorContext:
     paper: PaperVersion | None  # None when doctor runs outside an mcflow project
     paper_source: str = "cached"
+    project_root: Path | None = None
 
 
 Check = Callable[[SystemEnv, DoctorContext], CheckResult]
@@ -279,6 +282,41 @@ def check_gh(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
     return CheckResult(name, Status.OK, "Installed and signed in")
 
 
+def check_client_mod(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
+    """mcflow's Fabric client mod is required: screenshots and in-game checks depend on it."""
+    name = "mcflow client mod"
+    if ctx.project_root is None:
+        return CheckResult(
+            name, Status.WARN, "Not inside an mcflow project; can't check the client mod."
+        )
+    fix = (
+        "Close Minecraft, then run: mcflow client install   "
+        "(add a folder for Prism or a custom path)"
+    )
+    state = ctx.project_root / ".mcflow" / "client.toml"
+    if not state.is_file():
+        return CheckResult(
+            name,
+            Status.FAIL,
+            "Not installed. The workflow can't check anything in-game without it.",
+            fix,
+        )
+    client = tomllib.loads(state.read_text(encoding="utf-8"))["client"]
+    mods = Path(client["game_dir"]) / "mods"
+    jars = sorted(mods.glob("mcflow-client-*.jar")) if mods.is_dir() else []
+    if not jars:
+        return CheckResult(name, Status.FAIL, f"The mod is missing from {mods}.", fix)
+    if ctx.paper and client.get("minecraft_version") != ctx.paper.id:
+        return CheckResult(
+            name,
+            Status.FAIL,
+            f"Installed for Minecraft {client.get('minecraft_version')}, "
+            f"but the project targets {ctx.paper.id}.",
+            fix,
+        )
+    return CheckResult(name, Status.OK, f"{jars[-1].name} in {mods}")
+
+
 ALL_CHECKS: list[Check] = [
     check_paper_version,
     check_java,
@@ -288,4 +326,5 @@ ALL_CHECKS: list[Check] = [
     check_claude,
     check_git,
     check_gh,
+    check_client_mod,
 ]

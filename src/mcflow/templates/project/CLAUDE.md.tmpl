@@ -9,6 +9,18 @@ This workspace builds Paper plugins and resource packs for a production server w
 - Target: **Paper ${paper_version}**, which needs **Java ${java_minimum}+**. Both values live in `mcflow.toml`. Never assume a different version.
 - Before you build or run anything on a machine for the first time, run `mcflow doctor` and fix whatever it reports.
 
+## First-time setup on a machine
+
+Do these in order before the first development task. Each one needs something only the user can do, so ask and wait.
+
+1. **Paper jar.** Ask the user to download Paper ${paper_version} from https://papermc.io/downloads/paper and put the jar in `server/`. Never download it yourself.
+2. **Test server.** Run `mcflow server setup`. It checks the jar, picks Java, configures a localhost-only server with RCON, and installs ViaVersion.
+3. **EULA.** Show the user https://aka.ms/MinecraftEULA and ask whether they accept it. Only if they say yes, run `mcflow server setup --accept-eula`.
+4. **Client mod (required).** mcflow's Fabric client mod is what lets you join the server, run player commands and take screenshots. Without it, no in-game check can run. Ask the user to close Minecraft. Then run `mcflow client install`, which targets the official launcher's `.minecraft` folder, or pass the path they give you (a Prism instance, a custom game folder). Relay the steps it prints.
+5. **Start the game.** Ask the user to start the Fabric installation for Minecraft ${paper_version} from their launcher, signed in with their own account. Then use `client_launch` to attach to it.
+
+The client mod only joins servers on this computer and only acts while it's connected to one.
+
 ## Folder map
 
 | Folder | What goes there |

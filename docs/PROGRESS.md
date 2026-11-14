@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 2: in progress.** Research is done for 2.1 (server language) and 2.2 (real-client options). Decisions are made (see below). Building the server control tools, then the Fabric mod.
+**Stage 2: in progress.** Research is done for 2.1 (server language) and 2.2 (real-client options). Server setup, mcflow-server (server control and client tools) and the Fabric mod (1.21.11 and 26.3) are built and unit-tested. **Next: the live prototype on the user's machine (task 2.24)**, which needs the user's Paper jar, their EULA answer, permission to install into their `.minecraft`, and the user to start and sign in to Minecraft.
 
 ## Session log
 
@@ -64,11 +64,17 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Client mod install (2026-11-14):** defaults to the official launcher's `.minecraft` folder, and the user can point it at any other path.
 - **Client mod scope (2026-11-14):** the Stage 2 prototype builds **1.21.11 and 26.3**, one on each side of the 26.1 obfuscation change. The full 1.17+ range is task 2.26.
 
+- **Server setup lives in Python, runtime in TypeScript (2026-11-14):** `mcflow server setup` reuses the JDK detection and writes `.mcflow/local.toml`. mcflow-server only reads it.
+- **Client mod has no Fabric API and no mixins (2026-11-14):** fewer things break per version. The only per-version code is `Compat.java` (screen getter/setter, main render target).
+- **Client mod safety (2026-11-14):** it only joins loopback servers, and acts and takes screenshots only while connected to one. Resource packs are auto-accepted only from those servers.
+
 ## Findings
 
 - **Paper's Fill v3 API** gives each version's minimum Java and support status, but no maximum Java, so mcflow pins no maximum.
 - **TokToken's smart filter skips YAML, XML, TOML, CSS, HTML and SVG by default.** This matters for the unsupported-language flow in Stage 5.
 - **TokToken has no Windows ARM64 build.** `doctor` reports this.
+- **Minecraft 26.3 API changes vs 1.21.11** (checked with javap): the screen getter and setter moved to `Minecraft.gui` (`gui.screen()`, `gui.setScreen()`), and the main render target moved to `gameRenderer.mainRenderTarget()`. `ConnectScreen.startConnecting`, `ServerData`, `Screenshot.takeScreenshot`, `ClientPacketListener.sendCommand/sendChat`, `InventoryScreen` and the container and slot APIs are unchanged.
+- **The wiki's server.properties page sits behind a bot check**, which we don't try to get around. Paper's own reference covers the keys we need.
 
 ## Open questions
 

@@ -24,6 +24,8 @@ kb_app = typer.Typer(
 app.add_typer(kb_app, name="kb")
 server_app = typer.Typer(help="Set up the local test server.", no_args_is_help=True)
 app.add_typer(server_app, name="server")
+client_app = typer.Typer(help="Install mcflow's client mod (required).", no_args_is_help=True)
+app.add_typer(client_app, name="client")
 
 console = Console(soft_wrap=True)
 err = Console(stderr=True, soft_wrap=True)
@@ -127,14 +129,17 @@ def init(
 
 
 def _doctor_context(paper_version: str | None, offline: bool) -> doctor.DoctorContext:
+    root = find_project_root(Path.cwd())
     requested = paper_version
-    if requested is None and (root := find_project_root(Path.cwd())) is not None:
+    if requested is None and root is not None:
         requested = load(root).paper_version
     if requested is None:
-        return doctor.DoctorContext(paper=None)
+        return doctor.DoctorContext(paper=None, project_root=root)
     versions, source = paper.available_versions(online=not offline)
     try:
-        return doctor.DoctorContext(paper=paper.resolve(requested, versions), paper_source=source)
+        return doctor.DoctorContext(
+            paper=paper.resolve(requested, versions), paper_source=source, project_root=root
+        )
     except paper.UnsupportedPaperVersion as e:
         err.print(f"[red]{e}[/]")
         raise typer.Exit(2) from None
@@ -211,6 +216,45 @@ def server_setup(
             "\n[yellow]The server won't start until the Minecraft EULA is accepted.[/] "
             "Read https://aka.ms/MinecraftEULA, then rerun with --accept-eula."
         )
+
+
+@client_app.command("install")
+def client_install(
+    path: Annotated[
+        Path | None,
+        typer.Argument(
+            help="Minecraft folder or launcher instance (default: the official launcher's)."
+        ),
+    ] = None,
+    jar: Annotated[
+        Path | None, typer.Option(help="Install this locally built mod jar instead of the release.")
+    ] = None,
+) -> None:
+    """Install mcflow's client mod, plus Fabric for the official launcher. Close Minecraft first."""
+    from mcflow.client import install as client
+    from mcflow.doctor import java
+
+    root, config = _require_project()
+    target = (path or client.default_game_dir()).expanduser().resolve()
+    jdks = java.find_jdks(SystemEnv())
+    java_exe = None
+    if jdks:
+        home = jdks[0].home
+        java_exe = home / "bin" / ("java.exe" if SystemEnv().os_name == "windows" else "java")
+    try:
+        result = client.install(target, config.paper_version, java_exe, local_jar=jar)
+    except client.InstallError as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    client.save_state(root, result.layout, config.paper_version)
+
+    console.print(f"[green]Installed[/] {result.mod_jar.name} into {result.mod_jar.parent}")
+    console.print(f"  Launcher type: {result.layout.kind}")
+    console.print(f"  Fabric Loader: {result.fabric}")
+    console.print("\nTo finish:")
+    for step in result.steps_for_user:
+        console.print(f"  - {step}")
+    console.print("  - Sign in with your Microsoft account in the launcher if it asks.")
 
 
 def _not_yet(command: str, stage: str) -> None:

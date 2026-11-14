@@ -12,3 +12,9 @@ htmlcov/
 # mcp-server
 node_modules/
 mcp-server/dist/
+
+# client-mod
+client-mod/.gradle/
+client-mod/build/
+client-mod/versions/*/build/
+client-mod/versions/*/.gradle/

@@ -9,6 +9,8 @@ These are the same rules as `CLAUDE.md`, written for tools without Claude Code's
 - Target: **Paper ${paper_version}**, which needs **Java ${java_minimum}+** (see `mcflow.toml`).
 - Run `mcflow doctor` before your first build on a machine.
 - Never download a Paper jar. The user puts it in `server/`.
+- First-time setup: `mcflow server setup`, then ask the user about the Minecraft EULA (https://aka.ms/MinecraftEULA) and only with their yes run `mcflow server setup --accept-eula`. Then `mcflow client install`.
+- **mcflow's Fabric client mod is required** for every in-game check. The user starts Minecraft (the Fabric installation for Paper ${paper_version}'s version) from their own launcher, signed in.
 
 ## Task pipeline (every development task, in order)
 

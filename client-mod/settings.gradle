@@ -1,0 +1,30 @@
+pluginManagement {
+    repositories {
+        maven { url = "https://maven.fabricmc.net/" }
+        maven { url = "https://maven.kikugie.dev/releases" }
+        gradlePluginPortal()
+    }
+    plugins {
+        // One Loom artifact, two plugin IDs: obfuscated Minecraft (up to 1.21.11) needs remapping,
+        // unobfuscated Minecraft (26.1+) must not be remapped. build.gradle picks per version.
+        id 'net.fabricmc.fabric-loom-remap' version '1.19.4'
+        id 'net.fabricmc.fabric-loom' version '1.19.4'
+    }
+}
+
+plugins {
+    id 'dev.kikugie.stonecutter' version '0.9.8'
+}
+
+rootProject.name = 'mcflow-client'
+
+stonecutter {
+    kotlinController = false
+    centralScript = 'build.gradle'
+
+    create(getRootProject()) {
+        // Each version needs versions/<version>/gradle.properties.
+        versions '1.21.11', '26.3'
+        vcsVersion = '26.3'
+    }
+}
