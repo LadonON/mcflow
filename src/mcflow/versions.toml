@@ -10,7 +10,7 @@ fill_api = "https://fill.papermc.io/v3/projects/paper/versions"
 java_lts = [17, 21, 25]
 
 [node]
-minimum_major = 18
+minimum_major = 22
 
 [universal_ctags]
 version_marker = "Universal Ctags"

@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 1: built, and waiting for the user's go-ahead at the checkpoint.** Stage 2 doesn't start until the user says so.
+**Stage 2: in progress.** Research is done for 2.1 (server language) and 2.2 (real-client options). Decisions are made (see below). Building the server control tools, then the Fabric mod.
 
 ## Session log
 
@@ -57,6 +57,13 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **`gh` missing or signed out** is a warning, not a failure, since only `kb push` needs it.
 - **Paper versions PaperMC no longer supports** are a warning, not a failure. PaperMC currently marks only 26.3 as supported.
 
+- **Real client (task 2.3, user decision, 2026-11-14):** **mcflow's own Fabric client mod**, not HeadlessMc. The workflow tells users they **must** install it. mcflow installs it automatically when given a Minecraft instance folder. Users sign in through their own launcher. See [Stage 2 Fabric Client Mod](research/Stage%202%20Fabric%20Client%20Mod.md).
+
+- **mcflow-server language (2026-11-14):** TypeScript, installed through npm and pinned, because minecraft-data is 520 MB and can't ship in the wheel.
+- **Node minimum (2026-11-14):** raised from the spec's 18 to **22**, because mineflayer and minecraft-protocol require it.
+- **Client mod install (2026-11-14):** defaults to the official launcher's `.minecraft` folder, and the user can point it at any other path.
+- **Client mod scope (2026-11-14):** the Stage 2 prototype builds **1.21.11 and 26.3**, one on each side of the 26.1 obfuscation change. The full 1.17+ range is task 2.26.
+
 ## Findings
 
 - **Paper's Fill v3 API** gives each version's minimum Java and support status, but no maximum Java, so mcflow pins no maximum.
@@ -64,5 +71,6 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **TokToken has no Windows ARM64 build.** `doctor` reports this.
 
 ## Open questions
+
 
 - Should `LadonON/mcflow` stay private until the first release? Private repos use paid GitHub Actions minutes, and macOS runners count 10×.

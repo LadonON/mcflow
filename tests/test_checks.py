@@ -100,8 +100,8 @@ def test_java_outside_project_lists_jdks(fake_env):
     ("output", "status"),
     [
         ("v22.18.0\n", Status.OK),
-        ("v18.0.0", Status.OK),
-        ("v16.20.2", Status.FAIL),
+        ("v22.0.0", Status.OK),
+        ("v20.11.1", Status.FAIL),
         ("garbage", Status.FAIL),
     ],
 )

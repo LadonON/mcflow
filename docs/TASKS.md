@@ -78,9 +78,9 @@ Labels: **[you]** is a task the user has to do. **[research]** means check the c
 ## Stage 2: `mcflow-server` server control and the real-client prototype
 
 ### 2A. Decisions first
-- [ ] 2.1 **[research]** Compare TypeScript and Python for the MCP server against the current MCP SDKs and the mineflayer ecosystem, then write the case for the choice
-- [ ] 2.2 **[research]** Real-client options: HeadlessMC, a Fabric mod with a local control socket, a virtual display (Xvfb) on Linux, and others. For each, check whether it supports Microsoft sign-in, whether it can run without a screen, how screenshots are taken, the range of Minecraft versions it covers (including 26.x), how it behaves on Windows, macOS and Linux, and its license
-- [ ] 2.3 **[you]** Choose the language and the real-client approach once the trade-offs have been presented
+- [x] 2.1 **[research]** Compare TypeScript and Python for the MCP server against the current MCP SDKs and the mineflayer ecosystem, then write the case for the choice
+- [x] 2.2 **[research]** Real-client options: HeadlessMC, a Fabric mod with a local control socket, a virtual display (Xvfb) on Linux, and others. For each, check whether it supports Microsoft sign-in, whether it can run without a screen, how screenshots are taken, the range of Minecraft versions it covers (including 26.x), how it behaves on Windows, macOS and Linux, and its license
+- [x] 2.3 **[you]** Real client: our own Fabric mod (user decision). Language: TypeScript. Node 22+
 
 ### 2B. Test-server setup (section 3)
 - [ ] 2.4 First-run flow: ask for the Paper version, then ask the user to put a Paper jar in `server/`
@@ -100,12 +100,17 @@ Labels: **[you]** is a task the user has to do. **[research]** means check the c
 - [ ] 2.16 `resourcepack_build_and_serve(pack)`: validate, zip, compute the SHA-1, serve it over local HTTP and update `server.properties`
 - [ ] 2.17 Tests for each tool, plus a README
 
-### 2D. Real-client prototype
-- [ ] 2.18 Prototype the chosen client: Microsoft sign-in, launch, join the local server, accept the resource pack, take a screenshot
-- [ ] 2.19 `client_launch`, `client_join`, `client_run`, `client_screenshot`, `client_open_inventory`, `client_quit`
-- [ ] 2.20 Save screenshots to `server/screenshots/<task>/<label>.png`
-- [ ] 2.21 Write down the limits per OS and how they show up in `doctor`
-- [ ] 2.22 **Checkpoint:** show the results and wait for the go-ahead
+### 2D. Real client: mcflow's Fabric mod
+- [ ] 2.18 Set up the `client-mod/` Gradle project with Stonecutter, building **1.21.11 (obfuscated) and 26.3 (unobfuscated)** first, with no Fabric API dependency
+- [ ] 2.19 Shared core: loopback TCP control socket (127.0.0.1, random token, line-delimited JSON), plus a token and port file in the game folder
+- [ ] 2.20 Version-specific commands: join (localhost only), run a chat command, screenshot to a path, open the inventory, list the screen's widgets, accept the localhost resource pack, quit
+- [ ] 2.21 MCP tools `client_launch` (wait for the game, or launch through Prism if available), `client_join`, `client_run`, `client_screenshot`, `client_open_inventory`, `client_quit`, saving to `server/screenshots/<task>/<label>.png`
+- [ ] 2.22 `mcflow client install <instance-dir>`: detect the launcher layout, copy the matching mod jar, and install Fabric Loader for the official launcher. The workflow (CLAUDE.md, `doctor`) says the mod is **required**
+- [ ] 2.23 CI: build the mod jars and attach them to GitHub releases, with their SHA-256 pinned in `versions.toml`
+- [ ] 2.24 **[you]** Prototype on your machine: sign in through your launcher, join the local server, take a screenshot
+- [ ] 2.25 Write down the limits per OS (a visible window on Windows and macOS, Xvfb on Linux)
+- [ ] 2.26 Extend the mod to every Fabric version from 1.17 to the newest (this can move to a later stage if the range proves hard)
+- [ ] 2.27 **Checkpoint:** show the results and wait for the go-ahead
 
 ## Stage 3: Vertical slice (section 11, end to end)
 

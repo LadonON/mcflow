@@ -56,7 +56,7 @@ It never overwrites files. If anything it would create already exists, it stops 
 | Tool | Why |
 |---|---|
 | Java (the version your Paper version needs) | Building and running plugins |
-| Node.js 18+ | The test-server tools (later stages) |
+| Node.js 22+ | The test-server tools (later stages) |
 | universal-ctags | Required by TokToken. Exuberant ctags won't work. |
 | [TokToken](https://github.com/mauriziofonte/toktoken) | Code search for the AI. AGPL-3.0, downloaded from its official releases and never bundled. |
 | Claude Code | The main AI tool mcflow targets |
