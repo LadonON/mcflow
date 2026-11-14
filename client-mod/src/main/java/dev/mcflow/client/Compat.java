@@ -24,7 +24,7 @@ final class Compat {
     private Compat() {}
 
     static Screen currentScreen(Minecraft mc) {
-        //? if >=26.1 {
+        //? if >=26.2 {
         return mc.gui.screen();
         //?} else {
         /*return mc.screen;
@@ -32,7 +32,7 @@ final class Compat {
     }
 
     static void setScreen(Minecraft mc, Screen screen) {
-        //? if >=26.1 {
+        //? if >=26.2 {
         mc.gui.setScreen(screen);
         //?} else {
         /*mc.setScreen(screen);
@@ -41,17 +41,20 @@ final class Compat {
 
     /** Captures the last rendered frame. The callback owns the image and must close it. */
     static void takeScreenshot(Minecraft mc, Consumer<NativeImage> callback) {
-        //? if >=26.1 {
+        //? if >=26.2 {
         Screenshot.takeScreenshot(mc.gameRenderer.mainRenderTarget(), callback);
         //?} else if >=1.21.5 {
         /*Screenshot.takeScreenshot(mc.getMainRenderTarget(), callback);
-        *///?} else {
+        *///?} else if >=1.17.1 {
         /*callback.accept(Screenshot.takeScreenshot(mc.getMainRenderTarget()));
+        *///?} else {
+        /*callback.accept(Screenshot.takeScreenshot(mc.getWindow().getWidth(), mc.getWindow().getHeight(),
+                mc.getMainRenderTarget()));
         *///?}
     }
 
     static void clearToasts(Minecraft mc) {
-        //? if >=26.1 {
+        //? if >=26.2 {
         mc.gui.toastManager().clear();
         //?} else if >=1.21.2 {
         /*mc.getToastManager().clear();
@@ -79,18 +82,24 @@ final class Compat {
     }
 
     static void sendChat(Minecraft mc, String message) {
-        //? if >=1.19 {
+        //? if >=1.19.3 {
         mc.player.connection.sendChat(message);
-        //?} else {
+        //?} else if >=1.19.1 {
+        /*mc.player.chatSigned(message, null);
+        *///?} else {
         /*mc.player.chat(message);
         *///?}
     }
 
     /** Sends a command; {@code command} has no leading slash. */
     static void sendCommand(Minecraft mc, String command) {
-        //? if >=1.19 {
+        //? if >=1.19.3 {
         mc.player.connection.sendCommand(command);
-        //?} else {
+        //?} else if >=1.19.1 {
+        /*mc.player.commandSigned(command, null);
+        *///?} else if >=1.19 {
+        /*mc.player.command(command);
+        *///?} else {
         /*mc.player.chat("/" + command);
         *///?}
     }

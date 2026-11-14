@@ -39,14 +39,17 @@ All version differences live in `Compat.java`, behind Stonecutter comments (`//?
 
 | API | Changed at |
 |---|---|
-| `ServerData` constructor (boolean "lan" → `Type`) | 1.20.2 |
-| `ConnectScreen.startConnecting` (+quickPlay, then +TransferState) | 1.20, 1.20.5 |
-| Chat and commands (`player.chat` → `connection.sendChat` / `sendCommand`) | 1.19 |
+| Screenshots: `takeScreenshot(width, height, target)` → `(target)` → callback | 1.17.1, 1.21.5 |
+| Chat: `player.chat` → `player.chatSigned(msg, null)` → `connection.sendChat` | 1.19.1, 1.19.3 |
+| Commands: `player.chat("/…")` → `player.command` → `player.commandSigned(cmd, null)` → `connection.sendCommand` | 1.19, 1.19.1, 1.19.3 |
 | Fullscreen option (field → `OptionInstance`) | 1.19 |
 | Widget position, item registry, accessibility onboarding | 1.19.3 |
-| Toasts (`getToasts()` → `ToastManager`) | 1.21.2 |
-| Screenshots (returned image → callback) | 1.21.5 |
-| Screens, render target, toasts move to `Minecraft.gui` / `gameRenderer` | 26.1 |
+| `ServerData` constructor (boolean "lan" → `Type`) | 1.20.2 |
+| `ConnectScreen.startConnecting` (+quickPlay, then +TransferState) | 1.20, 1.20.5 |
+| Toasts (`getToasts()` → `getToastManager()`) | 1.21.2 |
+| Screen, toasts and render target move to `Minecraft.gui` / `gameRenderer` | **26.2** (26.1.x still uses `Minecraft`) |
+
+Each boundary was read from the real classes with `javap`. CI builds every version, so a wrong boundary fails the build.
 
 **Built for every Paper version mcflow supports**, from 1.17 to 26.3: one jar per version, generated from `src/mcflow/data/paper_versions.json`. Adding a version means adding it to `settings.gradle` and creating `versions/<v>/gradle.properties`.
 
