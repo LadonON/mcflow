@@ -113,22 +113,33 @@ Labels: **[you]** is a task the user has to do. **[research]** means check the c
 - [x] 2.26 The mod builds for all 31 supported versions (1.17 to 26.3) in CI. Only 26.3 has been run in a real game; the others compile against their real APIs. In-game testing of older versions belongs in Stage 7's cross-platform and version testing
 - [ ] 2.27 **Checkpoint:** show the results and wait for the go-ahead
 
-## Stage 3: Vertical slice (section 11, end to end)
+## Stage 3: Vertical slice: a command-opened on-screen UI (section 11, end to end)
 
-- [ ] 3.1 **[you]** Choose the slice's Paper version (or accept the latest)
-- [ ] 3.2 Write a first draft of the paper-plugin skill and the resource-packs skill, enough for the slice
-- [ ] 3.3 Knowledge-base lookup, then research: custom item models and custom GUIs for that version
-- [ ] 3.4 Sample Gradle plugin project in `plugins/`
-- [ ] 3.5 One custom item model in `resourcepacks/`
-- [ ] 3.6 UI layout flow: propose a mockup in `layouts/` and **[you]** approve it
-- [ ] 3.7 Implement the custom GUI (inventory plus font glyphs, as the version allows)
-- [ ] 3.8 MockBukkit unit tests
-- [ ] 3.9 Verify: build, tests, deploy, logs, command output, and screenshots against the layout
+**Changed by the user (2026-11-14)** from the spec's "one custom item model and one custom GUI". The slice is a custom UI element that appears on the player's screen when they run a command, in the style of BuiltByBit's "Ultimate UI" (https://builtbybit.com/resources/ultimate-ui.105345/), and it must resemble a reference image the user provides.
+
+What's known about Ultimate UI (only from search snippets, because BuiltByBit blocks automated access): it's a **server plugin**, described as a UI *cursor* editor, that shows custom on-screen UIs and works alongside the ItemsAdder, Nexo and CraftEngine resource-pack plugins. How it draws the UI and moves the cursor is not confirmed, and is part of 3.3.
+
+All art and code are **original**. The reference image and the listing guide the look and the behaviour, but nothing is copied from the paid resource.
+
+- [ ] 3.1 **[you]** Ask for the reference image: the user drops it in `layouts/` (any image format), with a note on what each part should do. Wait for it. Don't propose a layout before it arrives
+- [ ] 3.2 **[you]** Ask for anything else the build depends on:
+  - the slice's Paper version (or the latest)
+  - the command name and who can run it (a permission node)
+  - what closes the UI
+  - whether the UI is display-only or interactive (a cursor and clickable buttons, like Ultimate UI)
+  - optionally, the Ultimate UI listing's text or screenshots, pasted in, since the page can't be fetched automatically
+- [ ] 3.3 Knowledge-base lookup, then **[research]**: how to draw a full-screen or overlay UI from a server plugin on that version. Candidates: font glyphs with negative-space shifts in the action bar, title or boss bar; `text_display` entities in front of the camera; core shaders; a cursor driven by the player's camera or mouse movement. Compare each against the reference image, and present the trade-offs before choosing
+- [ ] 3.4 Write a first draft of the paper-plugin skill and the resource-packs skill, enough for the slice
+- [ ] 3.5 UI layout flow: turn the reference image into a spec in `layouts/` (sizes, positions, states), propose a rendered mockup made from original assets, and **[you]** approve it. Repeat until approved
+- [ ] 3.6 Sample Gradle plugin project in `plugins/`: the command, opening and closing, per-player state cleaned up on quit, and no blocking work on the main thread
+- [ ] 3.7 Resource pack in `resourcepacks/`: the UI textures and font, built and served with `resourcepack_build_and_serve`
+- [ ] 3.8 MockBukkit unit tests (the command, permissions, open and close state, cleanup on quit)
+- [ ] 3.9 Verify: build, tests, deploy, logs, the command run through `client_run`, and screenshots (`client_screenshot`) compared against the approved layout and the reference image
 - [ ] 3.10 Run the code-humanizer (first draft) over the slice's code
 - [ ] 3.11 Re-verify
 - [ ] 3.12 Re-index (TokToken by hand at this point)
 - [ ] 3.13 Write the first verified entries in `knowledge/`
-- [ ] 3.14 Present screenshots, test results and the open gaps (performance and memory checks arrive in Stage 4)
+- [ ] 3.14 Present the screenshots next to the reference image, with the test results and the open gaps (performance and memory checks arrive in Stage 4)
 - [ ] 3.15 **Checkpoint:** show the results and wait for the go-ahead
 
 ## Stage 4: Bots, swarm load tests, spark

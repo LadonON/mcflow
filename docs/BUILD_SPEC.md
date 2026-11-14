@@ -175,6 +175,7 @@ Never show the user unverified, un-humanized or un-indexed work as finished.
 - **Stage 1:** Python package skeleton, `init`, `doctor`, project template, `CLAUDE.md` and `AGENTS.md` drafts.
 - **Stage 2:** `mcflow-server` server control plus a **real-client screenshot prototype** (present the options first).
 - **Stage 3, vertical slice:** a sample plugin with one custom item model and one custom GUI, taken through the full section 11 pipeline end to end.
+  - *Amended by the user on 2026-11-14:* the slice is a custom on-screen UI element opened by a command, in the style of BuiltByBit's "Ultimate UI" and resembling a reference image the user provides (the stage asks for it first). See `docs/TASKS.md`, Stage 3.
 - **Stage 4:** bot subsystem, swarm load testing, spark integration.
 - **Stage 5:** all skills and helper agents, TokToken integration, unsupported-language flow.
 - **Stage 6:** knowledge base and cloud sync with pull requests, then `mcflow update`.

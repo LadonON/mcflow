@@ -75,6 +75,8 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Runtime releases are separate from Python releases (2026-11-14):** `runtime-v*` tags build the mod and server and make a draft release. Their checksums are pinned into `versions.toml` before the Python package is released, so the package only installs files it has checksums for.
 - **Local mod builds configure two versions by default (2026-11-14):** Loom prepares Minecraft for every configured version on each Gradle run. Configuring all 31 filled the dev machine's disk, so CI builds the full range in slices of six.
 
+- **Stage 3 redefined (user, 2026-11-14):** instead of "one custom item model and one custom GUI", the vertical slice is a custom UI element that appears on screen when a command is run, in the style of BuiltByBit's "Ultimate UI" and resembling a reference image the user provides. The stage starts by asking for that image. All assets and code are original. Not started; it waits for the user's go-ahead. Details are in TASKS.md, Stage 3.
+
 ## Findings
 
 - **Paper's Fill v3 API** gives each version's minimum Java and support status, but no maximum Java, so mcflow pins no maximum.
@@ -88,6 +90,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
   4. **`latest.log` uses a different line format from the console** (`[14:15:13] [Server thread/INFO]:` vs `[14:15:13 INFO]:`). The parser only knew the console format, so every log read came back empty, and the "no exceptions" gate would have passed silently. Tests now use lines copied from a real log.
 - **Client API boundaries** (all read from the real classes with javap; full table in `client-mod/README.md`): the screen, toasts and render target moved to `Minecraft.gui`/`gameRenderer` in **26.2** (not 26.1). Chat and commands went through three APIs (1.19, 1.19.1, 1.19.3). 1.17.0 takes screenshots with width and height arguments. The accessibility onboarding option arrived in 1.19.4.
 - **Disk:** the dev machine ran out of space during the first full local mod build. Only this session's Loom caches were removed (about 4.7 GB freed). Caches from before today were left alone.
+- **BuiltByBit blocks automated access (HTTP 403)**, so the Ultimate UI listing can't be read by tools. Search snippets say it's a server plugin ("UI cursor editor") that works with ItemsAdder, Nexo and CraftEngine. Its rendering technique is unconfirmed; Stage 3 research covers it, using the user's reference image and any listing text they paste.
 - **The wiki's server.properties page sits behind a bot check**, which we don't try to get around. Paper's own reference covers the keys we need.
 
 ## Open questions
