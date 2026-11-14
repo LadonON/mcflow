@@ -106,11 +106,11 @@ Labels: **[you]** is a task the user has to do. **[research]** means check the c
 - [x] 2.20 Version-specific commands: join (localhost only), run a chat command, screenshot to a path, open the inventory, list the screen's widgets, accept the localhost resource pack, quit
 - [x] 2.21 MCP tools `client_launch` (wait for the game, or launch through Prism if available), `client_join`, `client_run`, `client_screenshot`, `client_open_inventory`, `client_quit`, saving to `server/screenshots/<task>/<label>.png`
 - [x] 2.22 `mcflow client install <instance-dir>`: detect the launcher layout, copy the matching mod jar, and install Fabric Loader for the official launcher. The workflow (CLAUDE.md, `doctor`) says the mod is **required**
-- [~] 2.23 CI builds the mod jars (done). Still to do: attach them to a GitHub release and pin the SHA-256 in `versions.toml`, then publish mcflow-server to npm and have `mcflow init` register it in `.mcp.json`
+- [x] 2.23 Release pipeline: `release-runtime.yml` builds all 31 mod jars and the mcflow-server tarball with SHA256SUMS, creating a draft release on a `runtime-v*` tag. `scripts/pin_runtime.py` pins the checksums. `mcflow init` registers mcflow-server once pinned. Dry run passed 2026-11-14. **The first real release waits until the repo goes public (user decision).**
 - [x] 2.24 **[you]** Prototype on your machine: sign in through your launcher, join the local server, take a screenshot. Done 2026-11-14 on Paper 26.3: joined in about 6 s, ran player commands, opened the inventory (slots read back), took two screenshots
-- [ ] 2.24a Clean screenshots: hide the tutorial and "chat can't be verified" toasts in mcflow's game folder, and decide on a fixed window size (screenshots match the window, 854×480 by default)
-- [ ] 2.25 Write down the limits per OS (a visible window on Windows and macOS, Xvfb on Linux)
-- [ ] 2.26 Extend the mod to every Fabric version from 1.17 to the newest (this can move to a later stage if the range proves hard)
+- [~] 2.24a Clean screenshots: the code is done (toasts cleared before capture, tutorial and first-join notices off, `client_join` sets 1280×720). **Still needs one live check** (`node mcp-server/scripts/prototype.mjs <workspace>` with the user's game open)
+- [x] 2.25 Per-OS limits written in `client-mod/README.md` (Windows verified; macOS and Linux not yet tested; headless Linux not supported yet)
+- [x] 2.26 The mod builds for all 31 supported versions (1.17 to 26.3) in CI. Only 26.3 has been run in a real game; the others compile against their real APIs. In-game testing of older versions belongs in Stage 7's cross-platform and version testing
 - [ ] 2.27 **Checkpoint:** show the results and wait for the go-ahead
 
 ## Stage 3: Vertical slice (section 11, end to end)

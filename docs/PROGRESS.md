@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 2: in progress.** Research is done for 2.1 (server language) and 2.2 (real-client options). Server setup, mcflow-server (server control and client tools) and the Fabric mod (1.21.11 and 26.3) are built and unit-tested. **The live prototype passed (2026-11-14)**: the user's real, signed-in Minecraft 26.3 with mcflow's mod joined the local Paper 26.3 server, ran player commands, opened the inventory (slots read back as JSON) and took screenshots, saved to `server/screenshots/stage2-prototype/`. Remaining: 2.23 (release and npm), 2.24a (clean screenshots), 2.25 (OS limits), 2.26 (full version range), then the checkpoint.
+**Stage 2: done apart from one live screenshot check (2.24a), waiting for the user's go-ahead at the checkpoint.** Server control, the client tools and the Fabric mod are built. The mod is live-tested on 26.3 and compiles for all 31 versions from 1.17 to 26.3. The runtime release pipeline has passed a dry run. Stage 3 doesn't start until the user says so.
 
 ## Session log
 
@@ -70,6 +70,11 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 - **Official-launcher installs get their own game folder (2026-11-14):** `.minecraft/mcflow/<version>/`, set as the launcher profile's gameDir. The first real install found about 100 Forge 1.19.2 mods in the user's `.minecraft/mods`, which must never be mixed with mcflow's Fabric install.
 
+- **Repo visibility (2026-11-14):** stays private until the first release, then goes public (user decision).
+- **mcflow-server distribution (2026-11-14):** a tarball on the GitHub runtime release, run with `npx -y <pinned URL>`. No npm account.
+- **Runtime releases are separate from Python releases (2026-11-14):** `runtime-v*` tags build the mod and server and make a draft release. Their checksums are pinned into `versions.toml` before the Python package is released, so the package only installs files it has checksums for.
+- **Local mod builds configure two versions by default (2026-11-14):** Loom prepares Minecraft for every configured version on each Gradle run. Configuring all 31 filled the dev machine's disk, so CI builds the full range in slices of six.
+
 ## Findings
 
 - **Paper's Fill v3 API** gives each version's minimum Java and support status, but no maximum Java, so mcflow pins no maximum.
@@ -81,6 +86,8 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
   2. Minecraft's Gson drops null fields, so `"screen": null` arrived as a missing field and `client_join` never saw "no screen". The mod now serialises nulls, and the server treats missing as null.
   3. Minecraft pauses when its window loses focus, which is most of the time while mcflow drives it. The mod turns `pauseOnLostFocus` off (in mcflow's own game folder) and closes the pause menu before any command.
   4. **`latest.log` uses a different line format from the console** (`[14:15:13] [Server thread/INFO]:` vs `[14:15:13 INFO]:`). The parser only knew the console format, so every log read came back empty, and the "no exceptions" gate would have passed silently. Tests now use lines copied from a real log.
+- **Client API boundaries** (all read from the real classes with javap; full table in `client-mod/README.md`): the screen, toasts and render target moved to `Minecraft.gui`/`gameRenderer` in **26.2** (not 26.1). Chat and commands went through three APIs (1.19, 1.19.1, 1.19.3). 1.17.0 takes screenshots with width and height arguments. The accessibility onboarding option arrived in 1.19.4.
+- **Disk:** the dev machine ran out of space during the first full local mod build. Only this session's Loom caches were removed (about 4.7 GB freed). Caches from before today were left alone.
 - **The wiki's server.properties page sits behind a bot check**, which we don't try to get around. Paper's own reference covers the keys we need.
 
 ## Open questions
