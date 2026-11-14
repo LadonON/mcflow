@@ -114,7 +114,7 @@ final class Compat {
 
     /** Turns off the accessibility onboarding screen where it exists. Returns true if anything changed. */
     static boolean skipAccessibilityOnboarding(Minecraft mc) {
-        //? if >=1.19.3 {
+        //? if >=1.19.4 {
         boolean changed = mc.options.onboardAccessibility;
         mc.options.onboardAccessibility = false;
         return changed;

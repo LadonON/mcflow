@@ -43,7 +43,8 @@ All version differences live in `Compat.java`, behind Stonecutter comments (`//?
 | Chat: `player.chat` → `player.chatSigned(msg, null)` → `connection.sendChat` | 1.19.1, 1.19.3 |
 | Commands: `player.chat("/…")` → `player.command` → `player.commandSigned(cmd, null)` → `connection.sendCommand` | 1.19, 1.19.1, 1.19.3 |
 | Fullscreen option (field → `OptionInstance`) | 1.19 |
-| Widget position, item registry, accessibility onboarding | 1.19.3 |
+| Widget position, item registry | 1.19.3 |
+| Accessibility onboarding screen | 1.19.4 |
 | `ServerData` constructor (boolean "lan" → `Type`) | 1.20.2 |
 | `ConnectScreen.startConnecting` (+quickPlay, then +TransferState) | 1.20, 1.20.5 |
 | Toasts (`getToasts()` → `getToastManager()`) | 1.21.2 |
