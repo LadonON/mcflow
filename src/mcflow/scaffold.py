@@ -5,6 +5,7 @@ Template naming rules:
   _gitignore  -> .gitignore (a real one inside the package would hide template files from git)
 """
 
+import json
 from dataclasses import dataclass
 from importlib.resources import files
 from importlib.resources.abc import Traversable
@@ -12,6 +13,7 @@ from pathlib import Path, PurePosixPath
 from string import Template
 
 from mcflow.project import CONFIG_NAME, ProjectConfig
+from mcflow.versions import pins
 
 RENAMES = {"_gitignore": ".gitignore"}
 
@@ -53,9 +55,20 @@ def plan(config: ProjectConfig) -> list[PlannedFile]:
             planned.append(
                 PlannedFile(rel.with_name(name.removesuffix(".tmpl")), text.encode("utf-8"))
             )
+        elif name == ".mcp.json":
+            planned.append(PlannedFile(rel.with_name(name), _mcp_json(resource.read_text("utf-8"))))
         else:
             planned.append(PlannedFile(rel.with_name(name), resource.read_bytes()))
     return planned
+
+
+def _mcp_json(template: str) -> bytes:
+    """Add mcflow-server once a released tarball is pinned; npx runs that exact file."""
+    config = json.loads(template)
+    server = pins().get("mcflow_server", {})
+    if server.get("tarball_url"):
+        config["mcpServers"]["mcflow"] = {"command": "npx", "args": ["-y", server["tarball_url"]]}
+    return (json.dumps(config, indent=2) + "\n").encode("utf-8")
 
 
 def create(root: Path, config: ProjectConfig) -> list[PlannedFile]:

@@ -1,0 +1,106 @@
+# Builds the parts of mcflow that run outside Python: the Fabric client mod (every supported Minecraft
+# version) and the mcflow-server tarball, with SHA256SUMS.
+#
+#   push a tag runtime-v<version>   ->  a DRAFT GitHub release with all files (a human publishes it)
+#   run manually (workflow_dispatch) ->  the same files as a workflow artifact only, nothing released
+#
+# After publishing, run `python scripts/pin_runtime.py runtime-v<version>` to pin the checksums in
+# src/mcflow/versions.toml, so the Python package only ever installs files it has checksums for.
+name: Release runtime
+
+on:
+  push:
+    tags: ["runtime-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      slices: ${{ steps.plan.outputs.slices }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: plan
+        run: |
+          slices=$(ls client-mod/versions | sort -V | python3 -c "
+          import json, sys
+          v = [l.strip() for l in sys.stdin if l.strip()]
+          print(json.dumps([','.join(v[i:i + 6]) for i in range(0, len(v), 6)]))")
+          echo "slices=$slices" >> "$GITHUB_OUTPUT"
+
+  client-mod:
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        versions: ${{ fromJSON(needs.plan.outputs.slices) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "25"
+      - working-directory: client-mod
+        run: ./gradlew collectJars --console=plain -Pmcflow.versions=${{ matrix.versions }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mod-${{ strategy.job-index }}
+          path: client-mod/build/libs/*.jar
+
+  mcp-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - working-directory: mcp-server
+        run: |
+          npm ci
+          npm test
+          npm run build
+          npm pack
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mcp-server
+          path: mcp-server/mcflow-server-*.tgz
+
+  assemble:
+    needs: [client-mod, mcp-server]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: parts
+      - name: Collect files and checksums
+        run: |
+          mkdir dist
+          # Every slice also builds 26.3 (the source version); the copies are identical, keep one.
+          find parts -type f \( -name '*.jar' -o -name '*.tgz' \) -exec cp -n {} dist/ \;
+          expected=$(ls client-mod/versions | wc -l)
+          built=$(ls dist/mcflow-client-*.jar | wc -l)
+          if [ "$built" -ne "$expected" ]; then
+            echo "Built $built mod jars but client-mod/versions has $expected versions" >&2
+            exit 1
+          fi
+          cd dist
+          sha256sum * | sort -k2 > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-release
+          path: dist/*
+      - name: Create draft release
+        if: startsWith(github.ref, 'refs/tags/runtime-v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" --draft \
+            --title "mcflow runtime ${GITHUB_REF_NAME#runtime-v}" \
+            --notes "Fabric client mod for every supported Minecraft version, and mcflow-server. Checksums in SHA256SUMS."

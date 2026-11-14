@@ -85,6 +85,14 @@ minecraft_versions = [
 release_url = ""
 sha256 = {}
 
+[mcflow_server]
+# mcflow's MCP server (mcp-server/ in this repo), shipped as a tarball on the runtime release.
+# Empty until the first runtime release is pinned with scripts/pin_runtime.py; until then
+# `mcflow init` leaves it out of .mcp.json.
+version = ""
+tarball_url = ""
+sha256 = ""
+
 [humanizer]
 repo = "blader/humanizer"
 commit = "b48c832f0f809c1b5658edbb838c2521b72f2413"
