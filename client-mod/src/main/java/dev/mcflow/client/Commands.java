@@ -11,10 +11,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -22,7 +20,6 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.tutorial.TutorialSteps;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
@@ -127,10 +124,10 @@ final class Commands {
         // Without this the game pauses whenever its window loses focus, which is most of the time while mcflow
         // drives it. The setting lives in mcflow's own game folder, so the user's other installs keep theirs.
         quietOptions();
-        ServerData data = new ServerData("mcflow test server", address, ServerData.Type.OTHER);
+        ServerData data = Compat.newServerData("mcflow test server", address);
         // Accept the server's resource pack without the prompt. Only ever applied to local servers (checked above).
         data.setResourcePackStatus(ServerData.ServerPackStatus.ENABLED);
-        ConnectScreen.startConnecting(Compat.currentScreen(mc), mc, parsed, data, false, null);
+        Compat.startConnecting(mc, parsed, data);
         JsonObject started = new JsonObject();
         started.addProperty("connecting", address);
         return started;
@@ -144,18 +141,18 @@ final class Commands {
     private void quietOptions() {
         var o = mc.options;
         boolean changed = o.pauseOnLostFocus || o.tutorialStep != TutorialSteps.NONE || !o.skipMultiplayerWarning
-                || !o.joinedFirstServer || o.onboardAccessibility;
+                || !o.joinedFirstServer;
         o.pauseOnLostFocus = false;
         o.tutorialStep = TutorialSteps.NONE;
         o.skipMultiplayerWarning = true;
         o.joinedFirstServer = true;
-        o.onboardAccessibility = false;
+        changed |= Compat.skipAccessibilityOnboarding(mc);
         if (changed) o.save();
     }
 
     private JsonElement clearToasts() {
         requireLocalServer();
-        Compat.toastManager(mc).clear();
+        Compat.clearToasts(mc);
         return JsonNull.INSTANCE;
     }
 
@@ -165,7 +162,7 @@ final class Commands {
         if (width < 320 || height < 240 || width > 7680 || height > 4320) {
             throw new CommandException("window size must be between 320x240 and 7680x4320");
         }
-        if (mc.options.fullscreen().get()) {
+        if (Compat.isFullscreen(mc)) {
             throw new CommandException("the game is in fullscreen; leave fullscreen (F11) to set a window size");
         }
         mc.getWindow().setWindowed(width, height);
@@ -174,14 +171,14 @@ final class Commands {
 
     private JsonElement chat(JsonObject args) {
         requireLocalServer();
-        mc.player.connection.sendChat(args.get("message").getAsString());
+        Compat.sendChat(mc, args.get("message").getAsString());
         return JsonNull.INSTANCE;
     }
 
     private JsonElement command(JsonObject args) {
         requireLocalServer();
         String command = args.get("command").getAsString();
-        mc.player.connection.sendCommand(command.startsWith("/") ? command.substring(1) : command);
+        Compat.sendCommand(mc, command.startsWith("/") ? command.substring(1) : command);
         return JsonNull.INSTANCE;
     }
 
@@ -218,8 +215,8 @@ final class Commands {
             JsonObject o = new JsonObject();
             o.addProperty("type", w.getClass().getSimpleName());
             o.addProperty("text", w.getMessage().getString());
-            o.addProperty("x", w.getX());
-            o.addProperty("y", w.getY());
+            o.addProperty("x", Compat.widgetX(w));
+            o.addProperty("y", Compat.widgetY(w));
             o.addProperty("width", w.getWidth());
             o.addProperty("height", w.getHeight());
             o.addProperty("active", w.isActive());
@@ -235,7 +232,7 @@ final class Commands {
                 if (stack.isEmpty()) continue;
                 JsonObject o = new JsonObject();
                 o.addProperty("slot", slot.index);
-                o.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+                o.addProperty("item", Compat.itemId(stack));
                 o.addProperty("count", stack.getCount());
                 o.addProperty("name", stack.getHoverName().getString());
                 slots.add(o);
@@ -252,7 +249,7 @@ final class Commands {
             throw new CommandException("screenshot path must be an absolute path ending in .png");
         }
         CompletableFuture<JsonElement> done = new CompletableFuture<>();
-        Screenshot.takeScreenshot(Compat.mainRenderTarget(mc), image -> {
+        Compat.takeScreenshot(mc, image -> {
             try (image) {
                 Files.createDirectories(path.getParent());
                 image.writeToFile(path);

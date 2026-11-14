@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -20,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
-import java.util.HexFormat;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,7 +52,9 @@ final class Bridge {
         ServerSocket socket = new ServerSocket(0, 4, InetAddress.getLoopbackAddress());
         byte[] random = new byte[32];
         new SecureRandom().nextBytes(random);
-        String token = HexFormat.of().formatHex(random);
+        StringBuilder hex = new StringBuilder(64);
+        for (byte b : random) hex.append(String.format("%02x", b));
+        String token = hex.toString();
 
         JsonObject info = new JsonObject();
         info.addProperty("port", socket.getLocalPort());
@@ -117,7 +117,7 @@ final class Bridge {
     private JsonObject handle(String line) {
         JsonObject reply = new JsonObject();
         try {
-            JsonObject request = JsonParser.parseString(line).getAsJsonObject();
+            JsonObject request = GSON.fromJson(line, JsonObject.class);
             if (request.has("id")) reply.add("id", request.get("id"));
             String given = request.has("token") ? request.get("token").getAsString() : "";
             if (!MessageDigest.isEqual(given.getBytes(StandardCharsets.UTF_8), token)) {

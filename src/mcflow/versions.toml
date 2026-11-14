@@ -48,7 +48,39 @@ loader_version = "0.20.1"
 [client_mod]
 # mcflow's own Fabric client mod (client-mod/ in this repo). Users must install it.
 version = "0.1.0"
-minecraft_versions = ["1.21.11", "26.3"]
+minecraft_versions = [
+  "1.17",
+  "1.17.1",
+  "1.18",
+  "1.18.1",
+  "1.18.2",
+  "1.19",
+  "1.19.1",
+  "1.19.2",
+  "1.19.3",
+  "1.19.4",
+  "1.20",
+  "1.20.1",
+  "1.20.2",
+  "1.20.4",
+  "1.20.5",
+  "1.20.6",
+  "1.21",
+  "1.21.1",
+  "1.21.3",
+  "1.21.4",
+  "1.21.5",
+  "1.21.6",
+  "1.21.7",
+  "1.21.8",
+  "1.21.9",
+  "1.21.10",
+  "1.21.11",
+  "26.1.1",
+  "26.1.2",
+  "26.2",
+  "26.3",
+]
 # Filled in when the mod is released on GitHub; until then install a local build with --jar.
 release_url = ""
 sha256 = {}

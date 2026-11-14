@@ -35,9 +35,33 @@ Stonecutter builds one jar per Minecraft version from the same source. Minecraft
 | up to 1.21.11 | `net.fabricmc.fabric-loom-remap` | Mojang names in source, remapped in the jar |
 | 26.1 and later | `net.fabricmc.fabric-loom` | Mojang names, no remapping |
 
-All version differences live in `Compat.java`, behind Stonecutter comments (`//? if >=26.1 {`).
+All version differences live in `Compat.java`, behind Stonecutter comments (`//? if >=26.1 {`):
 
-Currently built: **1.21.11** and **26.3**. Other versions are added in `settings.gradle` and `versions/<v>/gradle.properties`.
+| API | Changed at |
+|---|---|
+| `ServerData` constructor (boolean "lan" → `Type`) | 1.20.2 |
+| `ConnectScreen.startConnecting` (+quickPlay, then +TransferState) | 1.20, 1.20.5 |
+| Chat and commands (`player.chat` → `connection.sendChat` / `sendCommand`) | 1.19 |
+| Fullscreen option (field → `OptionInstance`) | 1.19 |
+| Widget position, item registry, accessibility onboarding | 1.19.3 |
+| Toasts (`getToasts()` → `ToastManager`) | 1.21.2 |
+| Screenshots (returned image → callback) | 1.21.5 |
+| Screens, render target, toasts move to `Minecraft.gui` / `gameRenderer` | 26.1 |
+
+**Built for every Paper version mcflow supports**, from 1.17 to 26.3: one jar per version, generated from `src/mcflow/data/paper_versions.json`. Adding a version means adding it to `settings.gradle` and creating `versions/<v>/gradle.properties`.
+
+## Platform notes
+
+The user starts the game from their own launcher, signed in with their own Microsoft account. mcflow never launches Minecraft or handles accounts.
+
+| | Status | What to know |
+|---|---|---|
+| **Windows** | **Verified** (2026-11-14, Windows 11, Minecraft 26.3, official launcher) | A normal game window opens. It can sit behind other windows, since mcflow turns off pause-on-focus-loss. Don't minimise it: a minimised game may stop rendering, which would give blank or stale screenshots (not yet tested). |
+| **macOS** | Not yet tested | Same as Windows. macOS may also slow down apps that are fully hidden (App Nap), so keep the window at least partly visible during checks. |
+| **Linux (desktop)** | Not yet tested | Same as Windows. |
+| **Linux (no screen, e.g. CI)** | Not supported yet | The game needs a display. Running the launcher under a virtual display (Xvfb with Mesa's software renderer) should work but hasn't been tried. |
+
+Screenshots are taken at the window's size. `client_join` sets 1280×720 unless asked otherwise, so screenshots from different runs line up.
 
 ## Build
 

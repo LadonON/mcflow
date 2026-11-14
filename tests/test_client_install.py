@@ -8,6 +8,7 @@ from mcflow.client import install
 from mcflow.doctor import checks
 from mcflow.doctor.checks import DoctorContext, Status
 from mcflow.paper import PaperVersion
+from mcflow.versions import pins
 
 
 def make_mod_jar(path: Path, minecraft: str, mod_id: str = "mcflow") -> Path:
@@ -149,8 +150,15 @@ def test_prism_instance_for_wrong_version_is_refused(tmp_path):
 
 
 def test_unsupported_minecraft_version_lists_supported_ones(tmp_path):
-    with pytest.raises(install.InstallError, match=r"Supported: 1\.21\.11, 26\.3"):
-        install.install(official_dir(tmp_path), "1.20.6", None, local_jar=None)
+    with pytest.raises(install.InstallError, match=r"Supported: 1\.17, 1\.17\.1, .*26\.3"):
+        install.install(official_dir(tmp_path), "1.16.5", None, local_jar=None)
+
+
+def test_every_paper_version_mcflow_supports_has_a_mod_build():
+    from mcflow import paper
+
+    supported = set(pins()["client_mod"]["minecraft_versions"])
+    assert {v.id for v in paper.load_cached()} <= supported
 
 
 def test_jar_for_other_version_is_refused(tmp_path):

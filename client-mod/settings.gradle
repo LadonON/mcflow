@@ -18,13 +18,35 @@ plugins {
 
 rootProject.name = 'mcflow-client'
 
+// Every supported version has a folder in versions/. Loom downloads and processes Minecraft for each
+// configured version on every Gradle run (several hundred MB each), so a build only configures the versions
+// it's asked for:
+//   ./gradlew collectJars                                   1.21.11 and 26.3 (local default)
+//   ./gradlew collectJars -Pmcflow.versions=1.20.4,1.20.6   these (26.3 is always added)
+//   ./gradlew collectJars -Pmcflow.versions=all             every version (CI, in slices)
+def numeric = { String v -> v.tokenize('.').collect { it as int } }
+def byVersion = { a, b ->
+    def x = numeric(a), y = numeric(b)
+    for (int i = 0; i < Math.max(x.size(), y.size()); i++) {
+        int c = (i < x.size() ? x[i] : 0) <=> (i < y.size() ? y[i] : 0)
+        if (c != 0) return c
+    }
+    0
+}
+def available = new File(rootDir, 'versions').listFiles().findAll { it.directory }*.name.sort(byVersion)
+def requested = providers.gradleProperty('mcflow.versions').getOrElse('1.21.11,26.3')
+def selected = requested == 'all' ? available : requested.tokenize(',')*.trim()
+def unknown = selected - available
+if (unknown) throw new GradleException("No versions/<v>/gradle.properties for: ${unknown.join(', ')}")
+selected = (selected + '26.3').unique().sort(byVersion)
+
 stonecutter {
     kotlinController = false
     centralScript = 'build.gradle'
 
     create(getRootProject()) {
-        // Each version needs versions/<version>/gradle.properties.
-        versions '1.21.11', '26.3'
+        versions(*selected)
+        // The version the sources in src/ are written for; must always be configured.
         vcsVersion = '26.3'
     }
 }

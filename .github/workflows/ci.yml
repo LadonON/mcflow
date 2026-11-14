@@ -48,9 +48,32 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  client-mod:
-    name: Fabric client mod (all Minecraft versions)
+  client-mod-plan:
+    name: Fabric client mod / plan slices
     runs-on: ubuntu-latest
+    outputs:
+      slices: ${{ steps.plan.outputs.slices }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: plan
+        # Every folder in client-mod/versions/ is a supported version. Six per job keeps each runner's
+        # disk use (Loom processes every configured Minecraft version) well within limits.
+        run: |
+          slices=$(ls client-mod/versions | sort -V | python3 -c "
+          import json, sys
+          v = [l.strip() for l in sys.stdin if l.strip()]
+          print(json.dumps([','.join(v[i:i + 6]) for i in range(0, len(v), 6)]))")
+          echo "slices=$slices" >> "$GITHUB_OUTPUT"
+          echo "$slices"
+
+  client-mod:
+    name: Fabric client mod / ${{ matrix.versions }}
+    needs: client-mod-plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        versions: ${{ fromJSON(needs.client-mod-plan.outputs.slices) }}
     defaults:
       run:
         working-directory: client-mod
@@ -60,10 +83,10 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
-      - run: ./gradlew collectJars --console=plain
+      - run: ./gradlew collectJars --console=plain -Pmcflow.versions=${{ matrix.versions }}
       - uses: actions/upload-artifact@v7
         with:
-          name: mcflow-client-jars
+          name: mcflow-client-jars-${{ strategy.job-index }}
           path: client-mod/build/libs/*.jar
 
   package:
