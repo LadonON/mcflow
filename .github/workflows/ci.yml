@@ -83,7 +83,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
-      - run: ./gradlew collectJars --console=plain -Pmcflow.versions=${{ matrix.versions }}
+      - run: ./gradlew collectJars --continue --console=plain -Pmcflow.versions=${{ matrix.versions }}
       - uses: actions/upload-artifact@v7
         with:
           name: mcflow-client-jars-${{ strategy.job-index }}
