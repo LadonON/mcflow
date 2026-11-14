@@ -251,13 +251,19 @@ mcp.registerTool(
     title: "Join the test server",
     description:
       "Connect the client to the local test server, accept its resource pack, and wait until the player is in " +
-      "the world with no screen open. The server must be running.",
-    inputSchema: { timeoutSeconds: z.number().int().min(10).max(600).default(120) },
+      "the world with no screen open. Sets the window size first so every screenshot has the same size. " +
+      "The server must be running.",
+    inputSchema: {
+      timeoutSeconds: z.number().int().min(10).max(600).default(120),
+      windowWidth: z.number().int().min(320).max(7680).default(1280),
+      windowHeight: z.number().int().min(240).max(4320).default(720),
+    },
   },
-  ({ timeoutSeconds }) =>
+  ({ timeoutSeconds, windowWidth, windowHeight }) =>
     guard(() =>
       withClient(async (bridge) => {
         const s = context().local();
+        await bridge.call("window_size", { width: windowWidth, height: windowHeight });
         await bridge.call("connect", { address: `127.0.0.1:${s.serverPort}` });
         const status = await waitFor(
           bridge,

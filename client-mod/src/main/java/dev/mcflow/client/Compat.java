@@ -2,6 +2,7 @@ package dev.mcflow.client;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.toasts.ToastManager;
 import net.minecraft.client.gui.screens.Screen;
 
 /** Every Minecraft API that differs between supported versions, and nothing else. */
@@ -29,6 +30,14 @@ final class Compat {
         return mc.gameRenderer.mainRenderTarget();
         //?} else {
         /*return mc.getMainRenderTarget();
+        *///?}
+    }
+
+    static ToastManager toastManager(Minecraft mc) {
+        //? if >=26.1 {
+        return mc.gui.toastManager();
+        //?} else {
+        /*return mc.getToastManager();
         *///?}
     }
 }

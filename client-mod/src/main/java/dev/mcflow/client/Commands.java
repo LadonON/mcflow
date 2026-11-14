@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
@@ -20,6 +21,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
+import net.minecraft.client.tutorial.TutorialSteps;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -50,7 +52,12 @@ final class Commands {
             case "open_inventory" -> onClientThread(this::openInventory);
             case "close_screen" -> onClientThread(this::closeScreen);
             case "screen" -> onClientThread(this::screen);
-            case "screenshot" -> mc.submit(() -> screenshot(args)).thenCompose(f -> f);
+            // Clear toasts first, then capture a frame rendered without them.
+            case "screenshot" -> mc.submit(this::clearToasts)
+                    .thenCompose(v -> CompletableFuture.supplyAsync(() -> screenshot(args),
+                            CompletableFuture.delayedExecutor(250, TimeUnit.MILLISECONDS, mc)))
+                    .thenCompose(f -> f);
+            case "window_size" -> onClientThread(() -> windowSize(args));
             case "quit" -> onClientThread(() -> {
                 mc.stop();
                 return JsonNull.INSTANCE;
@@ -119,10 +126,7 @@ final class Commands {
         }
         // Without this the game pauses whenever its window loses focus, which is most of the time while mcflow
         // drives it. The setting lives in mcflow's own game folder, so the user's other installs keep theirs.
-        if (mc.options.pauseOnLostFocus) {
-            mc.options.pauseOnLostFocus = false;
-            mc.options.save();
-        }
+        quietOptions();
         ServerData data = new ServerData("mcflow test server", address, ServerData.Type.OTHER);
         // Accept the server's resource pack without the prompt. Only ever applied to local servers (checked above).
         data.setResourcePackStatus(ServerData.ServerPackStatus.ENABLED);
@@ -130,6 +134,42 @@ final class Commands {
         JsonObject started = new JsonObject();
         started.addProperty("connecting", address);
         return started;
+    }
+
+    /**
+     * Settings that keep the game from interrupting automated checks. They are saved in mcflow's own game
+     * folder, so the user's other installations keep theirs:
+     * no pause when the window loses focus, no tutorial hints, no first-join notices.
+     */
+    private void quietOptions() {
+        var o = mc.options;
+        boolean changed = o.pauseOnLostFocus || o.tutorialStep != TutorialSteps.NONE || !o.skipMultiplayerWarning
+                || !o.joinedFirstServer || o.onboardAccessibility;
+        o.pauseOnLostFocus = false;
+        o.tutorialStep = TutorialSteps.NONE;
+        o.skipMultiplayerWarning = true;
+        o.joinedFirstServer = true;
+        o.onboardAccessibility = false;
+        if (changed) o.save();
+    }
+
+    private JsonElement clearToasts() {
+        requireLocalServer();
+        Compat.toastManager(mc).clear();
+        return JsonNull.INSTANCE;
+    }
+
+    private JsonElement windowSize(JsonObject args) {
+        int width = args.get("width").getAsInt();
+        int height = args.get("height").getAsInt();
+        if (width < 320 || height < 240 || width > 7680 || height > 4320) {
+            throw new CommandException("window size must be between 320x240 and 7680x4320");
+        }
+        if (mc.options.fullscreen().get()) {
+            throw new CommandException("the game is in fullscreen; leave fullscreen (F11) to set a window size");
+        }
+        mc.getWindow().setWindowed(width, height);
+        return status();
     }
 
     private JsonElement chat(JsonObject args) {
