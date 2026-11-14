@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 2: done apart from one live screenshot check (2.24a), waiting for the user's go-ahead at the checkpoint.** Server control, the client tools and the Fabric mod are built. The mod is live-tested on 26.3 and compiles for all 31 versions from 1.17 to 26.3. The runtime release pipeline has passed a dry run. Stage 3 doesn't start until the user says so.
+**Stage 2: done, and waiting for the user's go-ahead at the checkpoint.** The final live run (2026-11-14 15:03) produced clean 1280×720 screenshots, and each `client_run` returned its server log lines. Server control, the client tools and the Fabric mod are built. The mod is live-tested on 26.3 and compiles for all 31 versions from 1.17 to 26.3. The runtime release pipeline has passed a dry run. Stage 3 doesn't start until the user says so.
 
 ## Session log
 
