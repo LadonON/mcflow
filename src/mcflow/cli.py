@@ -23,8 +23,8 @@ kb_app = typer.Typer(
 )
 app.add_typer(kb_app, name="kb")
 
-console = Console()
-err = Console(stderr=True)
+console = Console(soft_wrap=True)
+err = Console(stderr=True, soft_wrap=True)
 
 
 def _version_callback(value: bool) -> None:
@@ -164,7 +164,7 @@ def doctor_cmd(
 
 
 def _not_yet(command: str, stage: str) -> None:
-    err.print(f"`mcflow {command}` isn't available yet. It's planned for {stage}.", soft_wrap=True)
+    err.print(f"`mcflow {command}` isn't available yet. It's planned for {stage}.")
     raise typer.Exit(3)
 
 
