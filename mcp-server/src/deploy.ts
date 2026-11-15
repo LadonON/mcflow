@@ -26,6 +26,18 @@ export function pickJar(names: string[]): string {
   );
 }
 
+/**
+ * The project's Gradle wrapper, or `gradle` from PATH. On Windows the command goes through cmd.exe
+ * (`shell: true`, needed to run a .bat), which splits an unquoted path at its first space, so the
+ * wrapper path is quoted there.
+ */
+export function gradleCommand(dir: string, platform: NodeJS.Platform, exists: (p: string) => boolean): string {
+  const win = platform === "win32";
+  const wrapper = join(dir, win ? "gradlew.bat" : "gradlew");
+  if (!exists(wrapper)) return "gradle";
+  return win ? `"${wrapper}"` : wrapper;
+}
+
 function run(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv, timeoutMs: number) {
   return new Promise<{ code: number | null; output: string }>((resolve) => {
     const child = spawn(cmd, args, { cwd, env, shell: process.platform === "win32", windowsHide: true });
@@ -49,8 +61,7 @@ export async function buildPlugin(ws: Workspace, project: string, java: string):
   const dir = join(ws.root, "plugins", project);
   if (!existsSync(dir)) throw new McflowError(`No plugin project at plugins/${project}/.`);
 
-  const wrapper = join(dir, process.platform === "win32" ? "gradlew.bat" : "gradlew");
-  const cmd = existsSync(wrapper) ? wrapper : "gradle";
+  const cmd = gradleCommand(dir, process.platform, existsSync);
   // Build with the same JDK that runs the server unless the project's toolchain says otherwise.
   const env = { ...process.env, JAVA_HOME: dirname(dirname(java)) };
 

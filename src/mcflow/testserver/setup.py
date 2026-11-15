@@ -1,6 +1,7 @@
 """`mcflow server setup`: turn server/ into a local-only test server (spec section 3)."""
 
 import hashlib
+import json
 import secrets
 import socket
 import urllib.request
@@ -156,7 +157,10 @@ def run(
             "rcon.password": settings.rcon_password,
             "broadcast-rcon-to-ops": "false",
             "require-resource-pack": "true",
-            "resource-pack-prompt": f"{config.name} test pack (built by mcflow)",
+            # A JSON text component: Minecraft 26.3 logs a parse error for plain text here.
+            "resource-pack-prompt": json.dumps(
+                {"text": f"{config.name} test pack (built by mcflow)"}
+            ),
             "resource-pack-id": existing.get("resource-pack-id") or str(uuid.uuid4()),
             # Filled in by resourcepack_build_and_serve on every pack build
             "resource-pack": existing.get("resource-pack", ""),
