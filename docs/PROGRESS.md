@@ -79,6 +79,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Stage 3 parameters (user, 2026-11-15):** Paper 26.3, `/menu` open to everyone (`mcflow.ui.menu`), interactive with a cursor and clickable buttons, closed by sneaking. Reference image received 2026-11-15.
 - **Stage 3 rendering (user, 2026-11-15):** option A, a font-glyph HUD in the title with a cursor driven by head rotation. The spike works in the real 26.3 client (see `docs/research/Stage 3 On-screen UI.md`).
 - **Menu input (user, 2026-11-15):** while the menu is open the player is in spectator mode (hides the hand and hotbar), and left clicks are read by a Netty packet hook, because Paper fires no event for spectator clicks. This relies on Paper internals; Space is the fallback. Locking the camera onto an entity was ruled out because the client then stops sending its view direction.
+- **Menu layout approved (user, 2026-11-15):** `mcflow-demo/layouts/menu.layout.md`. A 160×168 panel whose top is 56 GUI px above the screen centre (pinned by the face object), a 2× name, a 3×2 tile grid, and support for GUI height 240 and up. Tiles send a chat placeholder for now; level and XP are vanilla experience.
 
 ## Findings
 
@@ -99,6 +100,18 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Spike bugs fixed in mcflow (2026-11-15):**
   1. `plugin_deploy` failed whenever the workspace path had a space in it (the user's home folder does). cmd.exe split the unquoted `gradlew.bat` path. The path is now quoted, with a Windows regression test.
   2. `mcflow server setup` wrote `resource-pack-prompt` as plain text, and 26.3 logs a JSON parse error for that at every start. It's now a JSON text component.
+
+- **Stage 3 slice built and verified (2026-11-15):** `/menu` (`mcflow-demo/plugins/menu`, `resourcepacks/menu`) matches the approved layout in the real 26.3 client. Tests: 16 pass. In game: 5/5 checks pass. What the build taught (now in the skills):
+  1. MockBukkit 4.120 subclasses the plugin's main class, so it can't be `final`.
+  2. `PlayerMock.resetTitle()` throws `UnimplementedOperationException`, and an exception in `onDisable` during `unmock()` makes every later test fail with "Already mocking". Event-handler exceptions are only logged, so a test pass count can hide them; check stderr too.
+  3. The client centres titles at `-width/2` with integer division in font units, so a 41-unit panel sits 2 GUI px right of true centre.
+
+- **TokToken skips `plugins/` by default (2026-11-15):** its smart filter treats a folder named `plugins/` as vendored dependencies, so a workspace's own plugins weren't indexed. `--full` fixes it, and the workspace instructions now require it. TokToken and universal-ctags are installed by hand under `~/.local/mcflow-tools/` for now; the installer is Stage 5 (task 5.14).
+- **Player faces on offline test servers are unreliable (2026-11-15):** the same player's face showed up correctly, as a grey placeholder, blank, and black across four runs. The plugin now passes the signed skin when the server has one (always, on online-mode servers).
+
+- **Bots on 26.3 (2026-11-15):** mineflayer 4.39.0 supports up to 26.1, so bots join through ViaBackwards 5.12.2. Two mineflayer bugs (the UUID in the resource-pack reply, and no `tick_end` packet) needed workarounds; with them, every bot check passes. mineflayer 4.39.0 is now an exact dependency of mcflow-server. Details: `docs/research/Stage 4 Bots.md`.
+
+- **Bot tools done (2026-11-15):** the nine `bot_*` tools pass 30/30 live checks on the 26.3 test server. Two apparent bot bugs turned out to be the test world (a leftover chest on the walking lane) and vanilla spawn protection (bots aren't operators); the tool now names spawn protection when it's the reason.
 
 ## Open questions
 

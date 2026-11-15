@@ -132,24 +132,40 @@ All art and code are **original**. The reference image and the listing guide the
 - [x] 3.3a Spike for option A (user's choice, 2026-11-15): panel, text, face, XP bar, hover and a view-driven cursor, verified in the real 26.3 client. Results in `docs/research/Stage 3 On-screen UI.md`
 - [ ] 3.3b **[you]** Try the spike by hand: left click to select, sneak to close, and how the cursor feels with the mouse
   - Round 1 (2026-11-15): the hand and hotbar were visible, and the cursor wasn't smooth. Now spectator mode while the menu is open, a click packet hook (the user's choice) with Space as a fallback, and a redraw on every rotation packet. Round 2 hasn't been confirmed
-- [ ] 3.4 Write a first draft of the paper-plugin skill and the resource-packs skill, enough for the slice
-- [ ] 3.5 UI layout flow: turn the reference image into a spec in `layouts/` (sizes, positions, states), propose a rendered mockup made from original assets, and **[you]** approve it. Repeat until approved
-- [ ] 3.6 Sample Gradle plugin project in `plugins/`: the command, opening and closing, per-player state cleaned up on quit, and no blocking work on the main thread
-- [ ] 3.7 Resource pack in `resourcepacks/`: the UI textures and font, built and served with `resourcepack_build_and_serve`
-- [ ] 3.8 MockBukkit unit tests (the command, permissions, open and close state, cleanup on quit)
-- [ ] 3.9 Verify: build, tests, deploy, logs, the command run through `client_run`, and screenshots (`client_screenshot`) compared against the approved layout and the reference image
-- [ ] 3.10 Run the code-humanizer (first draft) over the slice's code
-- [ ] 3.11 Re-verify
-- [ ] 3.12 Re-index (TokToken by hand at this point)
-- [ ] 3.13 Write the first verified entries in `knowledge/`
-- [ ] 3.14 Present the screenshots next to the reference image, with the test results and the open gaps (performance and memory checks arrive in Stage 4)
-- [ ] 3.15 **Checkpoint:** show the results and wait for the go-ahead
+- [x] 3.4 Write a first draft of the paper-plugin skill and the resource-packs skill, enough for the slice
+  - Done 2026-11-15: `.claude/skills/paper-plugin/SKILL.md` and `.claude/skills/resource-packs/SKILL.md` in the project template (copied into mcflow-demo). Both hold only facts verified on 26.3 and mark the rest as unverified
+- [x] 3.5 UI layout flow: turn the reference image into a spec in `layouts/` (sizes, positions, states), propose a rendered mockup made from original assets, and **[you]** approve it. Repeat until approved
+  - Round 1 proposed 2026-11-15: `mcflow-demo/layouts/menu.layout.md` and three mockups rendered by `plugins/menu-spike/tools/render_mockup.py`. A 160×168 panel (the face is pinned to the title line, so not the reference's 3:4), a 2× name, spectator mode hides the HUD. **Approved 2026-11-15**, with chat placeholders for tile actions and vanilla XP
+- [x] 3.6 Sample Gradle plugin project in `plugins/`: the command, opening and closing, per-player state cleaned up on quit, and no blocking work on the main thread
+  - Done 2026-11-15: `mcflow-demo/plugins/menu/`. `tools/generate_assets.py` is the single source of the layout, writing the pack and `Glyphs.java`. `tools/render_mockup.py` draws the mockups from the same values
+- [x] 3.7 Resource pack in `resourcepacks/`: the UI textures and font, built and served with `resourcepack_build_and_serve`
+  - Done 2026-11-15: `mcflow-demo/resourcepacks/menu/` (format 97), all art original, including a 5×7 pixel font at 1× and 2×
+- [x] 3.8 MockBukkit unit tests (the command, permissions, open and close state, cleanup on quit)
+  - Done 2026-11-15: 16 tests pass on `mockbukkit-v26.3` 4.120.0. 8 cover layout and cursor maths (title advance always equals the panel's, tile hits, clamping, yaw wrap, name fallback). 8 run on MockBukkit (open into spectator, permission, default permission, sneak closes and restores the game mode, jump doesn't close, a second /menu keeps the original mode, quit, plugin disable). Spectator clicks go through Netty, which MockBukkit doesn't run, so they're covered in game only
+- [x] 3.9 Verify: build, tests, deploy, logs, the command run through `client_run`, and screenshots (`client_screenshot`) compared against the approved layout and the reference image
+  - Done 2026-11-15 at 1280×720 (GUI scale 3), screenshots in `mcflow-demo/server/screenshots/stage3-menu/`. 5/5 checks passed: no problems on /menu, spectator while open, click hook installed (no warning), game mode restored after a restart with the menu open, no exceptions in the log. The panel's top edge matches the approved mockup to the pixel. The mockup was 2 GUI px off horizontally (the client centres titles with integer maths); it's now fixed and matches. **Not verified automatically:** a real left click and sneak (the client mod can't press keys), so 3.3b stays open
+- [x] 3.10 Run the code-humanizer (first draft) over the slice's code
+  - Done 2026-11-15: first-draft `code-humanizer` skill added to the template. On the slice, it removed an unused method, a duplicate sneak handler, task and map cleanup that Bukkit already does, and `Math.max` guards that hid an initialisation-order gap (stats are now read before the first draw). Tests: 16/16 before and after
+- [x] 3.11 Re-verify
+  - Done 2026-11-15: build, tests (now 18) and two in-game runs pass, 5/5 checks each, screenshots in `server/screenshots/stage3-menu-reverify/`. The face rendered in the first verify run but was blank, then black, in the re-runs. That's the offline test server: the client looks the skin up by name. The plugin now passes the player's signed skin (the `textures` profile property), which online-mode servers always have; this is unit-tested but can't be seen on the offline test server
+- [x] 3.12 Re-index (TokToken by hand at this point)
+  - Done 2026-11-15: TokToken 0.5.0 (SHA-256 matches the pin) and universal-ctags p6.2.20261011.0 (matches GitHub's digest) installed under `~/.local/mcflow-tools/` with the user's OK. **TokToken's default filter skips `plugins/` as vendored code**, so the workspace indexed only Markdown. `--full` indexes all 38 files (426 symbols: Java, Python, Markdown). The CLAUDE.md and AGENTS.md templates now say to index in full mode. Resource-pack JSON still isn't indexed (Stage 5, task 5.15)
+- [x] 3.13 Write the first verified entries in `knowledge/`
+  - Done 2026-11-15: five entries in `mcflow-demo/knowledge/`: font-glyph-title-ui, player-head-text-object, view-driven-cursor, spectator-menu-input, mockbukkit-26-3. Each names the test or screenshot that proves it, and marks what isn't proven yet (a real left click; the signed-skin face in game)
+- [x] 3.14 Present the screenshots next to the reference image, with the test results and the open gaps (performance and memory checks arrive in Stage 4)
+  - Done 2026-11-15: `mcflow-demo/server/screenshots/stage3-result-compare.png` shows the reference, the approved mockup and two in-game shots. Open gaps: a real left click and sneak by a person (3.3b); the face is unreliable on the offline test server; the world turns behind the panel; the panel is squarer than the reference (pinned by the face); resource-pack JSON isn't indexed. Performance and memory checks arrive in Stage 4
+- [x] 3.15 **Checkpoint:** show the results and wait for the go-ahead
+  - Go-ahead given 2026-11-15 ("Go to Stage 4"). Task 3.3b stays open
 
 ## Stage 4: Bots, swarm load tests, spark
 
-- [ ] 4.1 **[research]** mineflayer: which versions it supports (including 26.x), and how it behaves in offline mode
-- [ ] 4.2 `bot_join`, `bot_leave`, `bot_chat`, `bot_move`, `bot_look`, `bot_use_item`, `bot_inventory`, `bot_click_window_slot`, `bot_status`
+- [x] 4.1 **[research]** mineflayer: which versions it supports (including 26.x), and how it behaves in offline mode
+  - Done 2026-11-15: `docs/research/Stage 4 Bots.md`. mineflayer 4.39.0 tops out at 26.1, so bots join the 26.3 server through **ViaBackwards 5.12.2** (installed with the user's OK, hash checked). Two mineflayer bugs needed workarounds: the resource-pack reply's UUID, and the missing `tick_end` packet. With both, a probe passed 10/10 (join, chat, look, walk, /menu, sneak closing it, five bots at once)
+- [ ] 4.1a `mcflow server setup` installs ViaBackwards (pinned SHA-256) when the server is newer than mineflayer supports; `doctor` reports it. Report both mineflayer bugs upstream (**[you]** approve before anything is posted)
+- [x] 4.2 `bot_join`, `bot_leave`, `bot_chat`, `bot_move`, `bot_look`, `bot_use_item`, `bot_inventory`, `bot_click_window_slot`, `bot_status`
+  - Done 2026-11-15: `mcp-server/src/bots.ts` plus the nine tools in `src/index.ts`. 49 unit tests pass (15 new), and a live run through the MCP server passed 30/30 (details in `docs/research/Stage 4 Bots.md`). Bots join the 26.3 server as 26.1 through ViaBackwards, with both mineflayer workarounds. `MCFLOW_BOT_TRACE=1` logs packets. Inside spawn protection, non-operator bots can't use blocks, and the tool says so
 - [ ] 4.3 `bot_swarm(count, behavior)`, with defined behaviors (idle, wander, use-feature, join-leave loop)
+  - Check the "moved too quickly!" warnings seen when five bots spawned at the same point at once (spread or stagger joins)
 - [ ] 4.4 **[research]** spark: installation, profiler commands, and reading MSPT and its reports from the command line or RCON
 - [ ] 4.5 Performance gate: record MSPT before and after, and flag regressions against a threshold
 - [ ] 4.6 Memory gate: repeated join, leave and use cycles, then check for leaked listeners, tasks and per-player maps (heap and object counts)

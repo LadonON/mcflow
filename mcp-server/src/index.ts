@@ -1,17 +1,18 @@
 #!/usr/bin/env node
-// mcflow-server: MCP tools for a local Paper test server (and, in later stages, bots and a real client).
+// mcflow-server: MCP tools for a local Paper test server, a real Minecraft client and test bots.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
+import { BotManager, inSpawnProtection, toMineflayerAngles } from "./bots.js";
 import { attach, loadClientState, screenshotPath, waitFor, type BridgeClient, type ClientStatus } from "./client.js";
 import { buildPlugin } from "./deploy.js";
 import { readLog } from "./logs.js";
 import { buildPack } from "./pack.js";
 import { PackServer } from "./packServer.js";
-import { updateProperties } from "./properties.js";
+import { readProperties, updateProperties } from "./properties.js";
 import { runCommand } from "./rcon.js";
 import { ServerController } from "./serverProcess.js";
 import { loadLocal, loadWorkspace, McflowError, type Workspace } from "./workspace.js";
@@ -373,7 +374,269 @@ mcp.registerTool(
     ),
 );
 
+// ---- Bots (mineflayer) ----------------------------------------------------------------------------------
+
+const bots = new BotManager(() => {
+  const { ws, local } = context();
+  return { host: "127.0.0.1", port: local().serverPort, serverVersion: ws.paperVersion };
+});
+const botName = z.string().min(1).describe("The bot's username");
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+mcp.registerTool(
+  "bot_join",
+  {
+    title: "Join a test bot",
+    description:
+      "Connect a mineflayer bot (offline mode) to the running test server and wait until it spawns. It accepts the " +
+      "server's resource pack. If mineflayer doesn't support the server's version yet, the bot joins as the newest " +
+      "version it supports and ViaBackwards on the server translates.",
+    inputSchema: { name: botName, timeoutSeconds: z.number().int().min(5).max(300).default(60) },
+  },
+  ({ name, timeoutSeconds }) => guard(async () => ok(await bots.join(name, timeoutSeconds * 1000))),
+);
+
+mcp.registerTool(
+  "bot_leave",
+  {
+    title: "Disconnect test bots",
+    description: "Disconnect one bot, or every bot when name is omitted.",
+    inputSchema: { name: botName.optional() },
+  },
+  ({ name }) =>
+    guard(async () => {
+      if (name) {
+        bots.leave(name);
+        return ok({ left: [name] });
+      }
+      return ok({ left: bots.leaveAll() });
+    }),
+);
+
+mcp.registerTool(
+  "bot_chat",
+  {
+    title: "Send chat or a command from a bot",
+    description:
+      "Send a chat message, or a command starting with /, as the bot. Returns the chat lines the bot received and " +
+      "what the server logged during the next waitMs.",
+    inputSchema: {
+      name: botName,
+      message: z.string().min(1).max(256),
+      waitMs: z.number().int().min(0).max(10_000).default(1000),
+    },
+  },
+  ({ name, message, waitMs }) =>
+    guard(async () => {
+      const m = bots.get(name);
+      const logPath = join(context().ws.serverDir, "logs", "latest.log");
+      const before = readLog(logPath).nextLine;
+      const seen = m.messages.length;
+      m.bot.chat(message);
+      await sleep(waitMs);
+      const after = readLog(logPath, before);
+      return ok({
+        sent: message,
+        received: m.messages.slice(Math.min(seen, m.messages.length)),
+        serverLog: after.entries.map((e) => e.text),
+        problems: summariseProblems(after.problems),
+      });
+    }),
+);
+
+const CONTROLS = ["forward", "back", "left", "right", "jump", "sprint", "sneak"] as const;
+
+mcp.registerTool(
+  "bot_move",
+  {
+    title: "Move a bot",
+    description:
+      "Hold movement keys (forward, back, left, right, jump, sprint, sneak) for durationMs, then release them. " +
+      "Returns the position before and after, as the bot and the server see it.",
+    inputSchema: {
+      name: botName,
+      controls: z.array(z.enum(CONTROLS)).min(1),
+      durationMs: z.number().int().min(50).max(30_000).default(1000),
+    },
+  },
+  ({ name, controls, durationMs }) =>
+    guard(async () => {
+      const m = bots.get(name);
+      const from = bots.status(name).position;
+      for (const c of controls) m.bot.setControlState(c, true);
+      await sleep(durationMs);
+      for (const c of controls) m.bot.setControlState(c, false);
+      await sleep(300); // let the last movement packets settle
+      const to = bots.status(name).position;
+      const moved = from && to ? Math.hypot(to.x - from.x, to.y - from.y, to.z - from.z) : undefined;
+      return ok({ from, to, moved: moved === undefined ? undefined : Math.round(moved * 100) / 100, status: bots.status(name) });
+    }),
+);
+
+mcp.registerTool(
+  "bot_look",
+  {
+    title: "Turn a bot",
+    description:
+      "Turn the bot's head. Give yaw and pitch in Minecraft's convention (degrees; yaw 0 = south, 90 = west; " +
+      "pitch -90 = up, 90 = down), or a block position to look at.",
+    inputSchema: {
+      name: botName,
+      yaw: z.number().optional(),
+      pitch: z.number().min(-90).max(90).optional(),
+      at: z.object({ x: z.number(), y: z.number(), z: z.number() }).optional(),
+    },
+  },
+  ({ name, yaw, pitch, at }) =>
+    guard(async () => {
+      const m = bots.get(name);
+      if (at) {
+        const { Vec3 } = await import("vec3");
+        await m.bot.lookAt(new Vec3(at.x, at.y, at.z), true);
+      } else {
+        const now = bots.status(name);
+        const a = toMineflayerAngles(yaw ?? now.yaw ?? 0, pitch ?? now.pitch ?? 0);
+        await m.bot.look(a.yaw, a.pitch, true);
+      }
+      await sleep(150); // the look goes out with the next physics tick
+      return ok(bots.status(name));
+    }),
+);
+
+mcp.registerTool(
+  "bot_use_item",
+  {
+    title: "Use an item or click with a bot",
+    description:
+      "Choose a hotbar slot (0-8) if given, then act: 'use' right-clicks with the held item (holding it for " +
+      "durationMs), 'activate_block' right-clicks the block the bot is looking at, 'attack' left-clicks (swings, and " +
+      "hits the entity in front of the bot if there is one).",
+    inputSchema: {
+      name: botName,
+      action: z.enum(["use", "activate_block", "attack"]).default("use"),
+      hotbarSlot: z.number().int().min(0).max(8).optional(),
+      offhand: z.boolean().default(false),
+      durationMs: z.number().int().min(0).max(10_000).default(0),
+    },
+  },
+  ({ name, action, hotbarSlot, offhand, durationMs }) =>
+    guard(async () => {
+      const m = bots.get(name);
+      const { bot } = m;
+      if (hotbarSlot !== undefined) bot.setQuickBarSlot(hotbarSlot);
+      let target: string | undefined;
+      if (action === "use") {
+        bot.activateItem(offhand);
+        await sleep(durationMs);
+        bot.deactivateItem();
+      } else if (action === "activate_block") {
+        const block = bot.blockAtCursor(5);
+        if (!block) throw new McflowError(`Bot "${name}" isn't looking at a block within 5 blocks.`);
+        // Containers answer with a window a moment later; wait for it rather than a fixed delay.
+        const opened = new Promise<boolean>((resolve) => {
+          const t = setTimeout(() => resolve(false), 2000);
+          bot.once("windowOpen", () => {
+            clearTimeout(t);
+            resolve(true);
+          });
+        });
+        await bot.activateBlock(block);
+        target = `${block.name} at ${block.position}`;
+        if (/chest|barrel|shulker_box|furnace|hopper|dispenser|dropper|crafter/.test(block.name)) {
+          if (!(await opened)) {
+            const radius = Number(readProperties(join(context().ws.serverDir, "server.properties"))["spawn-protection"] ?? 16);
+            const hint = inSpawnProtection(block.position, bot.spawnPoint, radius)
+              ? ` It's inside spawn protection (${radius} blocks around the world spawn), where only operators can use blocks: ` +
+                `op the bot, or test further from spawn.`
+              : "";
+            throw new McflowError(`Bot "${name}" clicked the ${block.name}, but no window opened within 2 s.${hint}`);
+          }
+        }
+      } else {
+        const entity = bot.entityAtCursor?.(3.5);
+        if (entity) {
+          bot.attack(entity);
+          target = `${entity.name ?? entity.type} #${entity.id}`;
+        } else {
+          bot.swingArm("right");
+        }
+      }
+      await sleep(300);
+      return ok({ action, target, held: bot.heldItem?.name ?? null, status: bots.status(name) });
+    }),
+);
+
+function describeSlots(slots: ReadonlyArray<{ slot: number; name: string; count: number; customName?: string | null } | null>) {
+  return slots
+    .filter((s): s is NonNullable<typeof s> => s !== null)
+    .map((s) => ({ slot: s.slot, item: s.name, count: s.count, ...(s.customName ? { customName: s.customName } : {}) }));
+}
+
+mcp.registerTool(
+  "bot_inventory",
+  {
+    title: "Read a bot's inventory",
+    description:
+      "List the items in the bot's inventory (slot numbers as in its inventory window: 36-44 is the hotbar), " +
+      "and, if a container or GUI window is open, that window's title and items.",
+    inputSchema: { name: botName },
+  },
+  ({ name }) =>
+    guard(async () => {
+      const { bot } = bots.get(name);
+      const window = bot.currentWindow;
+      return ok({
+        heldSlot: bot.quickBarSlot,
+        inventory: describeSlots(bot.inventory.slots),
+        window: window
+          ? { id: window.id, title: bots.status(name).window?.title, type: window.type, items: describeSlots(window.slots) }
+          : null,
+      });
+    }),
+);
+
+mcp.registerTool(
+  "bot_click_window_slot",
+  {
+    title: "Click a slot in a bot's open window",
+    description:
+      "Click a slot in the open window (a chest or plugin GUI), or in the inventory when none is open. button 0 = " +
+      "left, 1 = right; mode 0 = normal click, 1 = shift-click, 2 = number key, 4 = drop. Returns the window afterwards.",
+    inputSchema: {
+      name: botName,
+      slot: z.number().int().min(-999),
+      button: z.number().int().min(0).max(40).default(0),
+      mode: z.number().int().min(0).max(6).default(0),
+    },
+  },
+  ({ name, slot, button, mode }) =>
+    guard(async () => {
+      const { bot } = bots.get(name);
+      const window = bot.currentWindow ?? bot.inventory;
+      if (slot >= window.slots.length) throw new McflowError(`Slot ${slot} is outside the window (it has ${window.slots.length} slots).`);
+      await bot.clickWindow(slot, button, mode);
+      await sleep(300);
+      const after = bot.currentWindow;
+      return ok({
+        clicked: { slot, button, mode },
+        window: after ? { id: after.id, title: bots.status(name).window?.title, items: describeSlots(after.slots) } : null,
+        cursor: (after ?? bot.inventory).selectedItem?.name ?? null,
+      });
+    }),
+);
+
+mcp.registerTool(
+  "bot_status",
+  {
+    title: "Report test bots",
+    description: "Position, view, health, food, game mode, open window and last kick or error for one bot, or every bot.",
+    inputSchema: { name: botName.optional() },
+  },
+  ({ name }) => guard(async () => ok(name ? bots.status(name) : bots.names().map((n) => bots.status(n)))),
+);
+
 async function shutdown() {
+  bots.leaveAll();
   packServer?.close();
   try {
     await cached?.server.stop(30_000);
