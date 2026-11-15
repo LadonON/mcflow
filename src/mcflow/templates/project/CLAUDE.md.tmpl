@@ -66,6 +66,7 @@ A change is done only when all of these pass:
 
 - Use the TokToken MCP tools (`search_symbols`, `inspect_outline`, `inspect_symbol`, `find_references`, and the rest) to find code. Don't grep or read whole files unless TokToken can't answer, and say when you fall back.
 - After any code change, the indexer agent runs an incremental re-index.
+- **Index in full mode** (`full=true`, CLI `--full`). TokToken's default filter treats a folder named `plugins/` as vendored code and skips it, so the default index misses every plugin in this workspace (seen with TokToken 0.5.0).
 - If you meet files in a language TokToken can't parse (resource-pack JSON, `.mcmeta`, GLSL `.fsh`/`.vsh`/`.glsl`, YAML), **ask the user** before building a parser. If they agree, research the language first and try a universal-ctags optlib definition before anything deeper. Parser definitions belong in the mcflow package. Never modify TokToken itself.
 
 ## Knowledge base

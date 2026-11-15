@@ -20,7 +20,7 @@ These are the same rules as `CLAUDE.md`, written for tools without Claude Code's
 4. Verify: build, MockBukkit tests, deploy to the test server (restart, never `/reload`), check the logs for exceptions, check command output and screenshots against the approved layout, then run the load test (spark MSPT before and after) and the join/leave memory check.
 5. Clean up the code you changed: remove comments that restate the code, needless defensive checks, generic names and leftover scaffolding. Match the project's style. Change no behavior.
 6. Re-verify: rebuild, rerun the tests and do a quick in-game check.
-7. Re-index: `toktoken index:update`.
+7. Re-index: `toktoken index:update --full` (`--full` because the default filter skips `plugins/` as vendored code).
 8. Write proven techniques to `knowledge/` (frontmatter: title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date).
 9. Present the change with screenshots, test results and the MSPT numbers.
 10. Ask whether to share the new knowledge entries (`mcflow kb push`, which opens a pull request).
