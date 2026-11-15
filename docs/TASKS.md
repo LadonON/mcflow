@@ -121,14 +121,17 @@ What's known about Ultimate UI (only from search snippets, because BuiltByBit bl
 
 All art and code are **original**. The reference image and the listing guide the look and the behaviour, but nothing is copied from the paid resource.
 
-- [ ] 3.1 **[you]** Ask for the reference image: the user drops it in `layouts/` (any image format), with a note on what each part should do. Wait for it. Don't propose a layout before it arrives
-- [ ] 3.2 **[you]** Ask for anything else the build depends on:
+- [x] 3.1 **[you]** Ask for the reference image (received 2026-11-15: `mcflow-demo/layouts/9a745e86-….png`, a card with the player's head, name, level and XP bar, and a 3×2 icon grid): the user drops it in `layouts/` (any image format), with a note on what each part should do. Wait for it. Don't propose a layout before it arrives
+- [x] 3.2 **[you]** Ask for anything else the build depends on. **Answered 2026-11-15:** Paper **26.3**; command **`/menu`**, permission `mcflow.ui.menu` granted to everyone by default; **interactive** (cursor and clickable buttons); closed by **sneaking (Shift)**. Listing text not provided yet (optional). The questions were:
   - the slice's Paper version (or the latest)
   - the command name and who can run it (a permission node)
   - what closes the UI
   - whether the UI is display-only or interactive (a cursor and clickable buttons, like Ultimate UI)
   - optionally, the Ultimate UI listing's text or screenshots, pasted in, since the page can't be fetched automatically
-- [ ] 3.3 Knowledge-base lookup, then **[research]**: how to draw a full-screen or overlay UI from a server plugin on that version. Candidates: font glyphs with negative-space shifts in the action bar, title or boss bar; `text_display` entities in front of the camera; core shaders; a cursor driven by the player's camera or mouse movement. Compare each against the reference image, and present the trade-offs before choosing
+- [x] 3.3 Knowledge-base lookup, then **[research]**: how to draw a full-screen or overlay UI from a server plugin on that version. Candidates: font glyphs with negative-space shifts in the action bar, title or boss bar; `text_display` entities in front of the camera; core shaders; a cursor driven by the player's camera or mouse movement. Compare each against the reference image, and present the trade-offs before choosing
+- [x] 3.3a Spike for option A (user's choice, 2026-11-15): panel, text, face, XP bar, hover and a view-driven cursor, verified in the real 26.3 client. Results in `docs/research/Stage 3 On-screen UI.md`
+- [ ] 3.3b **[you]** Try the spike by hand: left click to select, sneak to close, and how the cursor feels with the mouse
+  - Round 1 (2026-11-15): the hand and hotbar were visible, and the cursor wasn't smooth. Now spectator mode while the menu is open, a click packet hook (the user's choice) with Space as a fallback, and a redraw on every rotation packet. Round 2 hasn't been confirmed
 - [ ] 3.4 Write a first draft of the paper-plugin skill and the resource-packs skill, enough for the slice
 - [ ] 3.5 UI layout flow: turn the reference image into a spec in `layouts/` (sizes, positions, states), propose a rendered mockup made from original assets, and **[you]** approve it. Repeat until approved
 - [ ] 3.6 Sample Gradle plugin project in `plugins/`: the command, opening and closing, per-player state cleaned up on quit, and no blocking work on the main thread

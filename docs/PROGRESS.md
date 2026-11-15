@@ -76,6 +76,9 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Local mod builds configure two versions by default (2026-11-14):** Loom prepares Minecraft for every configured version on each Gradle run. Configuring all 31 filled the dev machine's disk, so CI builds the full range in slices of six.
 
 - **Stage 3 redefined (user, 2026-11-14):** instead of "one custom item model and one custom GUI", the vertical slice is a custom UI element that appears on screen when a command is run, in the style of BuiltByBit's "Ultimate UI" and resembling a reference image the user provides. The stage starts by asking for that image. All assets and code are original. Not started; it waits for the user's go-ahead. Details are in TASKS.md, Stage 3.
+- **Stage 3 parameters (user, 2026-11-15):** Paper 26.3, `/menu` open to everyone (`mcflow.ui.menu`), interactive with a cursor and clickable buttons, closed by sneaking. Reference image received 2026-11-15.
+- **Stage 3 rendering (user, 2026-11-15):** option A, a font-glyph HUD in the title with a cursor driven by head rotation. The spike works in the real 26.3 client (see `docs/research/Stage 3 On-screen UI.md`).
+- **Menu input (user, 2026-11-15):** while the menu is open the player is in spectator mode (hides the hand and hotbar), and left clicks are read by a Netty packet hook, because Paper fires no event for spectator clicks. This relies on Paper internals; Space is the fallback. Locking the camera onto an entity was ruled out because the client then stops sending its view direction.
 
 ## Findings
 
@@ -92,6 +95,10 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Disk:** the dev machine ran out of space during the first full local mod build. Only this session's Loom caches were removed (about 4.7 GB freed). Caches from before today were left alone.
 - **BuiltByBit blocks automated access (HTTP 403)**, so the Ultimate UI listing can't be read by tools. Search snippets say it's a server plugin ("UI cursor editor") that works with ItemsAdder, Nexo and CraftEngine. Its rendering technique is unconfirmed; Stage 3 research covers it, using the user's reference image and any listing text they paste.
 - **The wiki's server.properties page sits behind a bot check**, which we don't try to get around. Paper's own reference covers the keys we need.
+
+- **Spike bugs fixed in mcflow (2026-11-15):**
+  1. `plugin_deploy` failed whenever the workspace path had a space in it (the user's home folder does). cmd.exe split the unquoted `gradlew.bat` path. The path is now quoted, with a Windows regression test.
+  2. `mcflow server setup` wrote `resource-pack-prompt` as plain text, and 26.3 logs a JSON parse error for that at every start. It's now a JSON text component.
 
 ## Open questions
 
