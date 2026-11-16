@@ -1,0 +1,51 @@
+# Releases the mcflow Python package on GitHub. There's no PyPI release: users install with pipx
+# straight from this repo, pinned to the tag:
+#
+#   pipx install git+https://github.com/LadonON/mcflow.git@v<version>
+#
+#   push a tag v<version>  ->  release checks, build, then a DRAFT GitHub release with the wheel
+#                              and sdist attached (a human publishes it)
+#   run manually           ->  checks and build only, as a workflow artifact
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Release checks
+        run: python scripts/check_release.py "${{ github.ref_type == 'tag' && github.ref_name || '' }}"
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install build twine
+          python -m build
+          python -m twine check --strict dist/*
+      - name: Install the wheel with pipx and run it
+        run: |
+          python -m pip install pipx
+          python -m pipx install dist/*.whl
+          mcflow --version
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+      - name: Draft the GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" --draft \
+            --title "mcflow ${GITHUB_REF_NAME#v}" \
+            --notes "Install: pipx install git+https://github.com/${GITHUB_REPOSITORY}.git@${GITHUB_REF_NAME}"

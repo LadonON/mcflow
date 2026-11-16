@@ -13,14 +13,14 @@ Java, Node.js, universal-ctags, TokToken, git and the GitHub CLI come next. `mcf
 ## 2. Install mcflow
 
 ```bash
-pipx install mcflow-cli
-```
-
-Until the first PyPI release:
-
-```bash
 pipx install git+https://github.com/LadonON/mcflow.git
 ```
+
+That installs the newest code on `main`. Once releases are tagged, add the tag to pin one: `...mcflow.git@v0.1.0`. mcflow isn't on PyPI.
+
+While the repo is private, git needs your GitHub login to clone it. If `gh auth login` didn't already set that up, run `gh auth setup-git` once first.
+
+To update later, reinstall: `pipx install --force git+https://github.com/LadonON/mcflow.git` (with `@<tag>` for a release). pipx lists the package as `mcflow-cli`; the command you run is `mcflow`.
 
 ## 3. Create a workspace
 
@@ -87,7 +87,7 @@ Drop logos, textures, sounds and models into `assets/` whenever you like. Claude
 
 - `mcflow kb push` opens a pull request on the shared knowledge base (`LadonON/mcflow-knowledge` unless you change `mcflow.toml`). It never pushes directly. Claude only runs it after you say yes.
 - `mcflow kb pull` brings in approved entries. It never overwrites one you've edited.
-- `pipx upgrade mcflow-cli`, then `mcflow update`, gets newer skills, agents and workflow files. Files you've edited stay as they are, and it shows you the diff.
+- `pipx install --force git+https://github.com/LadonON/mcflow.git`, then `mcflow update`, gets newer skills, agents and workflow files. Files you've edited stay as they are, and it shows you the diff.
 
 ## If something goes wrong
 

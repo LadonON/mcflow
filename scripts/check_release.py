@@ -1,4 +1,4 @@
-"""Refuse to release a Python package that can't work for users.
+"""Refuse to tag a release of the Python package that can't work for users.
 
     python scripts/check_release.py v0.1.0     # in the release workflow, with the pushed tag
     python scripts/check_release.py            # anywhere: the checks that don't need a tag

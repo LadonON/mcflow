@@ -257,10 +257,9 @@ All art and code are **original**. The reference image and the listing guide the
   - Done 2026-11-16: `docs/GETTING_STARTED.md`, linked from the README
 - [ ] 7.4 Humanize every README and guide with the prose humanizer
   - 2026-11-16: full pass on the new guide, PLATFORMS.md and the README sections written this stage; every other README scanned for the mechanical tells (dashes, curly quotes, stock phrases), with none found. A full pass on all of them is left for just before the release, once the install instructions change
-- [ ] 7.5 Set up a trusted publisher for the PyPI release (GitHub Actions OIDC)
-  - Built 2026-11-16: `.github/workflows/release-pypi.yml` (a `v*` tag builds, runs `twine check` and `scripts/check_release.py`, then publishes through OIDC in the `pypi` environment). `check_release.py` refuses a dev version, a tag that doesn't match, or an unpinned runtime release; today it reports both runtime pins missing
-- [ ] 7.5a **[you]** On pypi.org, add a pending trusted publisher: project `mcflow-cli`, owner LadonON, repository mcflow, workflow `release-pypi.yml`, environment `pypi`. Then decide whether the `pypi` GitHub environment should require your approval
+- [x] 7.5 ~~Set up a trusted publisher for the PyPI release (GitHub Actions OIDC)~~ Replaced (user, 2026-11-16): no PyPI for now; users install with pipx from GitHub
+  - Done 2026-11-16: `.github/workflows/release.yml`. A `v*` tag runs `scripts/check_release.py` (no dev version, tag matches, runtime pinned), builds and `twine check`s the wheel and sdist, installs the wheel with pipx, then drafts a GitHub release with both attached. The PyPI workflow was removed before it ever ran
 - [ ] 7.5b Before 7.7: publish a runtime release (`runtime-v0.1.0`), pin it with `scripts/pin_runtime.py`, and make `LadonON/mcflow` public, since `npx` and `client install` can't download from a private repo's releases
-- [ ] 7.6 **[you]** Approve publishing `mcflow-cli` to PyPI
+- [ ] 7.6 **[you]** Approve tagging and publishing the v0.1.0 GitHub release
 - [ ] 7.7 Release v0.1.0
 - [ ] 7.8 **Final checkpoint**

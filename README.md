@@ -11,16 +11,14 @@ New here? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). What wo
 You need Python 3.11 or newer and [pipx](https://pipx.pypa.io/).
 
 ```bash
-pipx install mcflow-cli
-```
-
-Until the first PyPI release, install from GitHub:
-
-```bash
 pipx install git+https://github.com/LadonON/mcflow.git
 ```
 
-The package is called `mcflow-cli` on PyPI (the name `mcflow` was taken). The command you run is `mcflow`.
+That installs the newest code on `main`. Once releases are tagged, add the tag to pin one: `...mcflow.git@v0.1.0`. mcflow isn't on PyPI.
+
+While the repo is private, git needs your GitHub login to clone it. If `gh auth login` didn't already set that up, run `gh auth setup-git` once first.
+
+To update later, reinstall: `pipx install --force git+https://github.com/LadonON/mcflow.git` (with `@<tag>` for a release). pipx lists the package as `mcflow-cli`; the command you run is `mcflow`.
 
 ## Use
 
@@ -66,7 +64,7 @@ mcflow kb push                 # open a pull request with new and changed entrie
 mcflow update                  # newer skills, agents and workflow files, then kb pull
 ```
 
-An entry applies only to the Minecraft versions it was proven on, and only to the same pack format when it has one. `mcflow update` replaces a skill, agent or workflow file only if you haven't edited it. For a file you have edited it shows the diff, and `--take <file>` accepts the new version. Your plugins, packs, research, layouts, assets and server are never touched. Run `pipx upgrade mcflow-cli` first to get the newest versions.
+An entry applies only to the Minecraft versions it was proven on, and only to the same pack format when it has one. `mcflow update` replaces a skill, agent or workflow file only if you haven't edited it. For a file you have edited it shows the diff, and `--take <file>` accepts the new version. Your plugins, packs, research, layouts, assets and server are never touched. Reinstall mcflow with pipx first (see Install) to get the newest versions.
 
 The shared repo's starting files (README, entry validator and CI) are in [knowledge-repo/](knowledge-repo/).
 

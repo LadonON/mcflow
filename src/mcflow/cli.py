@@ -408,7 +408,7 @@ def update(
     """Update skills, agents and workflow files, then the knowledge base. Your files stay put.
 
     Files you've edited are never overwritten: the diff to the new version is shown instead.
-    To get a newer mcflow first: pipx upgrade mcflow-cli
+    To get a newer mcflow first: pipx install --force git+https://github.com/LadonON/mcflow.git
     """
     from mcflow import update as updater
 

@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 7: in progress (2026-11-16).** Built: cross-platform integration CI (passes 13/13 locally on Windows, not yet run on GitHub), the doctor Platform check and `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, and the PyPI trusted-publishing workflow with release checks. Waiting on: a CI run on GitHub (the branch isn't pushed), the user's PyPI publisher setup (7.5a), a pinned runtime release and a public repo (7.5b), then approval to publish (7.6).
+**Stage 7: in progress (2026-11-16).** Built: cross-platform integration CI (passes 13/13 locally on Windows, not yet run on GitHub), the doctor Platform check and `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, and a GitHub release workflow with release checks. Waiting on: CI on PR #1, a pinned runtime release and a public repo (7.5b), then approval to tag and publish (7.6).
 
 ## Session log
 
@@ -38,7 +38,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 - The last CI run on `main` (Stage 5) had failed: the real-ctags tests ran against macOS's BSD ctags and the Windows runner's Exuberant Ctags (they only checked that some `ctags` existed), and the pipx smoke test looked for `.claude/skills/.gitkeep`, which the template no longer has. Fixed both; `mcflow tags` now refuses a non-universal ctags with a clear message, and CI installs universal-ctags on every runner.
 - Integration job per OS, and `mcp-server/scripts/integration.mjs`. Locally on Windows (Java 21, Node 24, Paper 1.21.11 build 132, its SHA-256 matching PaperMC's): 13/13 checks.
-- Added the doctor Platform check, `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, `release-pypi.yml` and `scripts/check_release.py`. 214 tests pass.
+- Added the doctor Platform check, `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, `release-pypi.yml` (replaced the same day by `release.yml`, see Decisions) and `scripts/check_release.py`. 214 tests pass.
 
 ## Environment (this dev machine, 2026-11-14)
 
@@ -57,7 +57,8 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Decisions
 
-- **Name:** **mcflow**, published on PyPI as **`mcflow-cli`** because `mcflow` is taken there. The command and the import package are both `mcflow`.
+- **Name:** **mcflow**. The distribution is **`mcflow-cli`** because `mcflow` is taken on PyPI. The command and the import package are both `mcflow`.
+- **No PyPI for now (user, 2026-11-16):** mcflow installs with `pipx install git+https://github.com/LadonON/mcflow.git` (pinned with `@v<version>` once releases are tagged). Releases are tagged GitHub releases (`release.yml`). This replaces the spec's `pipx install mcflow` and task 7.5's PyPI trusted publisher. While the repo is private, installing needs git credentials (`gh auth setup-git`).
 - **GitHub:** repos live on the personal account `LadonON`. Code is in `LadonON/mcflow`, and the knowledge base will be `LadonON/mcflow-knowledge`, which doesn't exist yet.
 - **License:** MIT. TokToken (AGPL-3.0) is only downloaded from its official releases and never bundled.
 - **Python:** 3.11 or later.
