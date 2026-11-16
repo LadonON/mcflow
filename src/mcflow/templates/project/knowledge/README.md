@@ -15,4 +15,4 @@ date: <YYYY-MM-DD>
 ---
 ```
 
-Only add an entry after the technique has been proven. Entries can be shared through `mcflow kb push`, which opens a pull request on the shared knowledge base, and new ones fetched with `mcflow kb pull`.
+Only add an entry after the technique has been proven. `mcflow kb validate` checks the frontmatter, and `mcflow kb list` shows which entries apply to this project's version. Entries can be shared through `mcflow kb push`, which opens a pull request on the shared knowledge base, and approved ones fetched with `mcflow kb pull`. A pull never overwrites an entry you've edited.

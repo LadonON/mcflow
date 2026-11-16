@@ -224,15 +224,24 @@ All art and code are **original**. The reference image and the listing guide the
 
 ## Stage 6: Knowledge base, cloud sync, `update`
 
-- [ ] 6.1 Validate knowledge-base entry frontmatter (title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date)
-- [ ] 6.2 Version matching: decide when an entry applies to the project's version
+- [x] 6.1 Validate knowledge-base entry frontmatter (title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date)
+  - Done 2026-11-16: `mcflow/knowledge/entry.py`, standard library only. `mcflow kb validate` checks required fields, quoted release versions, pack format, proof, sources, a real non-future date, a body and a kebab-case file name
+- [x] 6.2 Version matching: decide when an entry applies to the project's version
+  - Done 2026-11-16: an entry applies only to versions it lists (exact) and, if it has one, the same pack format. `mcflow kb list` shows applies or lead only. Decision in PROGRESS.md
 - [ ] 6.3 **[you]** Confirm the knowledge-base repo name
+  - Recorded so far: `LadonON/mcflow-knowledge` (PROGRESS.md decisions, and the default in `versions.toml`)
 - [ ] 6.4 Create the `mcflow-knowledge` repo
-- [ ] 6.5 `mcflow kb push`: branch, commit the new entries and open a **pull request** through gh (never push directly)
-- [ ] 6.6 `mcflow kb pull`: merge entries that have been approved without overwriting local edits, and report conflicts
+  - Waits for 6.3. Then: create it, add the files from `knowledge-repo/`, and protect `main` so changes arrive only through pull requests
+- [x] 6.5 `mcflow kb push`: branch, commit the new entries and open a **pull request** through gh (never push directly)
+  - Done 2026-11-16: validates first, asks (or `--yes`), pushes a new `kb/...` branch (through a fork without write access) and runs `gh pr create`. Skips entries already proposed or behind. Tested with real git on a local repo and a fake gh; not yet run against GitHub (needs 6.4)
+- [x] 6.6 `mcflow kb pull`: merge entries that have been approved without overwriting local edits, and report conflicts
+  - Done 2026-11-16: adds new entries, updates unedited ones, keeps local edits, reports conflicts with the shared copy in `.mcflow/kb-conflicts/`, leaves locally deleted entries deleted, skips invalid shared entries. Tested against a local repo; not yet against GitHub
 - [ ] 6.7 CI in the knowledge-base repo that validates entries on every PR
-- [ ] 6.8 `mcflow update`: update skills, agents and the knowledge base without touching the user's project files. Detect files the user has edited and show diffs
-- [ ] 6.9 Tests, plus READMEs
+  - Written 2026-11-16: `knowledge-repo/.github/workflows/validate.yml` validates `entries/` and fails a `kb/` PR that touches anything else. Ticked once it runs in the real repo after 6.4
+- [x] 6.8 `mcflow update`: update skills, agents and the knowledge base without touching the user's project files. Detect files the user has edited and show diffs
+  - Done 2026-11-16: `.mcflow/managed.json` from `init`. Replaces only unedited managed files, shows diffs for edited ones (`--take` accepts the new version), adds new ones, removes dropped unedited ones, has `--dry-run`, then runs `kb pull` (`--no-kb` skips it)
+- [x] 6.9 Tests, plus READMEs
+  - Done 2026-11-16: 66 new tests (201 total). README section, knowledge skill, workspace knowledge README, CLAUDE.md and AGENTS.md updated; `knowledge-repo/README.md` written
 - [ ] 6.10 **Checkpoint:** show the results and wait for the go-ahead
 
 ## Stage 7: Cross-platform, docs, release

@@ -44,6 +44,7 @@ EXPECTED_FILES = {
     "resourcepacks/.gitkeep",
     "layouts/README.md",
     "server/README.md",
+    ".mcflow/managed.json",  # what init wrote, so `mcflow update` can spot edits
 }
 
 

@@ -13,16 +13,16 @@ These are the same rules as `CLAUDE.md`, written for tools without Claude Code's
 
 ## Task pipeline (every development task, in order)
 
-1. Check `knowledge/` for every API, format and resource-pack feature you'll use (an entry applies only if its `minecraft_versions` include Paper ${paper_version}). If there's none, research current official docs and the server and client jars, and write `research/<Topic>.md` with sources and the date.
+1. Check `knowledge/` for every API, format and resource-pack feature you'll use (an entry applies only if its `minecraft_versions` include Paper ${paper_version}; `mcflow kb list` checks this). If there's none, research current official docs and the server and client jars, and write `research/<Topic>.md` with sources and the date.
 2. Plan. For player-facing UI, get a layout approved first: the user's sketch in `layouts/`, or a mockup you render from original assets there, plus a written spec.
 3. Implement.
 4. Verify: build, MockBukkit tests (read the report's stderr too), `gate_resource_pack`, deploy to the test server (restart, never `/reload`), check the logs for exceptions, check command output and screenshots against the approved layout, then `gate_performance`, `gate_memory` and `gate_thread_safety`.
 5. Clean up the code you changed, between `mcflow humanize snapshot <project>` and `mcflow humanize check <project>`: remove comments that restate the code, needless defensive checks, generic names and leftover scaffolding; match the project's style; change no behaviour and no public API. Revert anything the check rejects.
 6. Re-verify: rebuild, rerun the tests and do a quick in-game check.
 7. Re-index: `toktoken index:update .` (`.toktoken.json` keeps plugins in the index).
-8. Write proven techniques to `knowledge/` (frontmatter: title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date).
+8. Write proven techniques to `knowledge/` (frontmatter: title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date), then run `mcflow kb validate`.
 9. Present the change with screenshots, test results and the tick-time numbers.
-10. Ask whether to share the new knowledge entries (`mcflow kb push`, which opens a pull request).
+10. Ask whether to share the new knowledge entries (only with their yes: `mcflow kb push --yes`, which opens a pull request).
 
 ## Quality gates
 

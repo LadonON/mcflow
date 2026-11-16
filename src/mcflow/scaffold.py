@@ -12,6 +12,7 @@ from importlib.resources.abc import Traversable
 from pathlib import Path, PurePosixPath
 from string import Template
 
+from mcflow import manifest
 from mcflow.project import CONFIG_NAME, ProjectConfig
 from mcflow.versions import pins
 
@@ -81,4 +82,12 @@ def create(root: Path, config: ProjectConfig) -> list[PlannedFile]:
         target = root / f.path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(f.content)
+    manifest.save(
+        root,
+        {
+            f.path.as_posix(): manifest.digest(f.content)
+            for f in planned
+            if manifest.is_managed(f.path)
+        },
+    )
     return planned

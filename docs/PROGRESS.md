@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 2: done, and waiting for the user's go-ahead at the checkpoint.** The final live run (2026-11-14 15:03) produced clean 1280×720 screenshots, and each `client_run` returned its server log lines. Server control, the client tools and the Fabric mod are built. The mod is live-tested on 26.3 and compiles for all 31 versions from 1.17 to 26.3. The runtime release pipeline has passed a dry run. Stage 3 doesn't start until the user says so.
+**Stage 6: built (2026-11-16), and waiting for the user at the checkpoint.** The user's "build the next phase" on 2026-11-16 was taken as the go-ahead past the Stage 5 checkpoint. Knowledge-base validation, version matching, `kb pull`, `kb push`, `kb validate`, `kb list` and `mcflow update` are built and tested locally. Still open: the user confirming and creating the shared repo `LadonON/mcflow-knowledge` (6.3, 6.4) and its CI going live there (6.7). `kb push` and `kb pull` have only run against a local git repo so far, not GitHub.
 
 ## Session log
 
@@ -26,6 +26,13 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - Manual test: built the wheel, installed it with `pipx install <wheel>`, ran `mcflow init` with Paper 1.21.11, then `mcflow doctor`. The result was correct.
 - CI: the first run failed on Ubuntu because Rich hard-wrapped a message that contained a long temp path. Both CLI consoles now use `soft_wrap`. After that, all 9 jobs passed: tests on Windows, macOS and Ubuntu with Python 3.11 and 3.13, plus the pipx smoke test on each OS.
 - Research for this stage: [research/Stage 1 Toolchain and Version Pins.md](research/Stage%201%20Toolchain%20and%20Version%20Pins.md).
+
+### 2026-11-16: Stage 6
+
+- Fresh clone at `C:\Users\Some One\mcflow`.
+- Built `mcflow/knowledge/entry.py` (frontmatter parser, validator, version matching), `mcflow/knowledge/sync.py` (pull, push), `mcflow/manifest.py` and `mcflow/update.py`. New commands: `kb validate`, `kb list`, `kb pull`, `kb push` and `update`.
+- `knowledge-repo/` holds the shared repo's first files: README, `entries/`, `scripts/validate_entries.py` (an exact copy of `entry.py`, checked by a test) and the validation workflow.
+- 201 tests pass (66 new) and ruff is clean. The pull and push tests run real git against a local bare repo, with a fake `gh` for the pull request and fork calls. A manual run of `init`, `kb pull`, `kb list` and `update` against a local repo behaved as expected.
 
 ## Environment (this dev machine, 2026-11-14)
 
@@ -80,6 +87,12 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Stage 3 rendering (user, 2026-11-15):** option A, a font-glyph HUD in the title with a cursor driven by head rotation. The spike works in the real 26.3 client (see `docs/research/Stage 3 On-screen UI.md`).
 - **Menu input (user, 2026-11-15):** while the menu is open the player is in spectator mode (hides the hand and hotbar), and left clicks are read by a Netty packet hook, because Paper fires no event for spectator clicks. This relies on Paper internals; Space is the fallback. Locking the camera onto an entity was ruled out because the client then stops sending its view direction.
 - **Menu layout approved (user, 2026-11-15):** `mcflow-demo/layouts/menu.layout.md`. A 160×168 panel whose top is 56 GUI px above the screen centre (pinned by the face object), a 2× name, a 3×2 tile grid, and support for GUI height 240 and up. Tiles send a chat placeholder for now; level and XP are vanilla experience.
+
+- **When an entry applies (task 6.2, 2026-11-16):** only to the Minecraft versions in its `minecraft_versions` (exact match, no ranges), and, when the entry has a `pack_format` and the caller passes the project's, only to the same pack format. Anything else is a lead for research. This keeps the "proven" promise: a technique proven on 1.21.11 is never assumed to work on 26.3.
+- **Entry validation is standard-library only (2026-11-16)**, so the shared repo's CI runs a copy of it without installing mcflow (which stays private until release). Required fields must be present, versions must be quoted release numbers, the date must be real and not in the future, the body non-empty and the file name kebab-case. Unknown fields only warn.
+- **Sync state (2026-11-16):** `.mcflow/kb.json` stores the hash of each entry as last seen on the shared default branch, and as last sent in a pull request. Pull uses it to tell "edited here" from "updated there": an entry changed on both sides is a conflict, left untouched, with the shared copy saved to `.mcflow/kb-conflicts/`. Push uses it to skip entries already in an open PR and entries that are merely behind.
+- **kb push never touches the default branch (2026-11-16):** it pushes a new `kb/<project>-<time>` branch (through a fork if the user can't push to the repo), then runs `gh pr create`. Git authenticates through `gh auth git-credential`, so no separate git login is needed.
+- **update's manifest (2026-11-16):** `init` writes `.mcflow/managed.json`, the hash of every managed file (`.claude/skills/`, `.claude/agents/`, `.ctags.d/`, CLAUDE.md, AGENTS.md, `.mcp.json`, `.toktoken.json`). `update` replaces a file only when it still matches that hash. Workspaces made before this have no manifest, so any difference counts as an edit. Hashes ignore CRLF versus LF.
 
 ## Findings
 

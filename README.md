@@ -2,7 +2,7 @@
 
 mcflow sets up Claude Code (and other AI coding tools) to build Paper plugins and resource packs that are ready for a busy production server. It gives the AI a fixed way of working: research before guessing, test on a real server, check the result in-game, and only then show you the change.
 
-> **Status: early development (Stage 1 of 7).** `init` and `doctor` work. The test-server tools, skills, helper agents and knowledge-base sync come in later stages. See [docs/TASKS.md](docs/TASKS.md).
+> **Status: early development (Stage 6 of 7).** The workspace, test server, client mod, bots, gates, skills, agents and knowledge-base sync are built. Cross-platform testing, docs and the first release come next. See [docs/TASKS.md](docs/TASKS.md).
 
 ## Install
 
@@ -50,6 +50,23 @@ my-plugin/
 It never overwrites files. If anything it would create already exists, it stops and lists the files.
 
 `mcflow doctor` looks up which Java your Paper version needs (from PaperMC, or a built-in list when offline). It finds the JDKs you have installed and tells you exactly what to install or set for anything missing. Add `--json` for machine-readable output.
+
+## Knowledge base and updates
+
+Each workspace keeps proven techniques in `knowledge/`, and can share them through one GitHub repo (`[knowledge] repo` in `mcflow.toml`, `LadonON/mcflow-knowledge` by default).
+
+```bash
+mcflow kb list                 # which entries apply to this project's version (and --pack-format N)
+mcflow kb validate             # check every entry's frontmatter
+mcflow kb pull                 # bring in approved entries; never overwrites ones you've edited
+mcflow kb push --dry-run       # see what would be shared
+mcflow kb push                 # open a pull request with new and changed entries (never a direct push)
+mcflow update                  # newer skills, agents and workflow files, then kb pull
+```
+
+An entry applies only to the Minecraft versions it was proven on, and only to the same pack format when it has one. `mcflow update` replaces a skill, agent or workflow file only if you haven't edited it. For a file you have edited it shows the diff, and `--take <file>` accepts the new version. Your plugins, packs, research, layouts, assets and server are never touched. Run `pipx upgrade mcflow-cli` first to get the newest versions.
+
+The shared repo's starting files (README, entry validator and CI) are in [knowledge-repo/](knowledge-repo/).
 
 ## Requirements
 
