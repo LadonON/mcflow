@@ -43,7 +43,10 @@ def test_replace_section_keeps_the_rest_of_versions_toml():
         assert kept in parsed, f"[{kept}] was lost"
 
 
-def test_mcp_json_leaves_out_unreleased_server(tmp_path):
+def test_mcp_json_leaves_out_unreleased_server(tmp_path, monkeypatch):
+    real = scaffold.pins()
+    unreleased = {"version": "", "tarball_url": "", "sha256": ""}
+    monkeypatch.setattr(scaffold, "pins", lambda: {**real, "mcflow_server": unreleased})
     config = ProjectConfig("p", "26.3", 25, "LadonON/mcflow-knowledge")
     scaffold.create(tmp_path, config)
     servers = json.loads((tmp_path / ".mcp.json").read_text())["mcpServers"]
