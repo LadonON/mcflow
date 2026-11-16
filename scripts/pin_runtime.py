@@ -95,7 +95,7 @@ def main() -> None:
     text = VERSIONS.read_text(encoding="utf-8")
     text = replace_section(text, "client_mod", client)
     text = replace_section(text, "mcflow_server", server)
-    VERSIONS.write_text(text, encoding="utf-8")
+    VERSIONS.write_bytes(text.encode("utf-8"))  # LF, even on Windows
     print(f"Pinned {tag} into {VERSIONS}. Review with `git diff` and commit.")
 
 

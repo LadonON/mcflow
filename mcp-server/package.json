@@ -1,6 +1,6 @@
 {
   "name": "mcflow-server",
-  "version": "0.1.0-dev.0",
+  "version": "0.1.0",
   "description": "MCP server for mcflow: control a local Paper test server, test bots and a real Minecraft client",
   "license": "MIT",
   "type": "module",
@@ -8,7 +8,8 @@
     "mcflow-server": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "npm-shrinkwrap.json"
   ],
   "engines": {
     "node": ">=22"

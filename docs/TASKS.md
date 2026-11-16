@@ -259,6 +259,8 @@ All art and code are **original**. The reference image and the listing guide the
   - 2026-11-16: full pass on the new guide, PLATFORMS.md and the README sections written this stage; every other README scanned for the mechanical tells (dashes, curly quotes, stock phrases), with none found. A full pass on all of them is left for just before the release, once the install instructions change
 - [x] 7.5 ~~Set up a trusted publisher for the PyPI release (GitHub Actions OIDC)~~ Replaced (user, 2026-11-16): no PyPI for now; users install with pipx from GitHub
   - Done 2026-11-16: `.github/workflows/release.yml`. A `v*` tag runs `scripts/check_release.py` (no dev version, tag matches, runtime pinned), builds and `twine check`s the wheel and sdist, installs the wheel with pipx, then drafts a GitHub release with both attached. The PyPI workflow was removed before it ever ran
+- [x] 7.5c Release prep found while planning 7.5b (2026-11-16)
+  - Done: mcflow-server bumped to 0.1.0 and its version read from `package.json`; `npm-shrinkwrap.json` shipped in the tarball; `mcflow server mcp` checks the tarball's SHA-256 before running it (the old `npx -y <url>` never checked it); `pin_runtime.py` writes LF on Windows; personal paths and names removed from tracked files. The real launcher ran mcflow-server 0.1.0 from a checked tarball. Still in older commits: the author email and one full-name path (rewriting history is the user's call)
 - [ ] 7.5b Before 7.7: publish a runtime release (`runtime-v0.1.0`), pin it with `scripts/pin_runtime.py`, and make `LadonON/mcflow` public, since `npx` and `client install` can't download from a private repo's releases
 - [ ] 7.6 **[you]** Approve tagging and publishing the v0.1.0 GitHub release
 - [ ] 7.7 Release v0.1.0

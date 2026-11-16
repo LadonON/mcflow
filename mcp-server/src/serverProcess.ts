@@ -90,6 +90,12 @@ export class ServerController {
     });
     this.child = child;
     writeFileSync(pidFile(this.ws), String(child.pid));
+    // Runs whenever this child exits, even long after startup. It must only clear the PID file if the file
+    // still names this child: on Windows the exit event can arrive after a restart has written the new PID.
+    child.once("exit", () => {
+      if (readPid(this.ws) === child.pid) rmSync(pidFile(this.ws), { force: true });
+      if (this.child === child) this.child = undefined;
+    });
 
     const ready = new Promise<void>((resolve, reject) => {
       const onData = (chunk: Buffer) => {
@@ -106,7 +112,6 @@ export class ServerController {
       child.stdout?.on("data", onData);
       child.stderr?.on("data", onData);
       child.once("exit", (code) => {
-        rmSync(pidFile(this.ws), { force: true });
         reject(new McflowError(`The server exited during startup (code ${code}). Last output:\n${this.consoleTail.slice(-20).join("\n")}`));
       });
     });
@@ -122,6 +127,10 @@ export class ServerController {
     const pid = this.livePid();
     if (!pid) return { wasRunning: false, forced: false };
     const s = this.local();
+    // A child we launched ourselves: wait for its exit event too, so its handler has run before a restart
+    // writes the next PID (process.kill(pid, 0) on Windows can report it gone before the event arrives).
+    const owned = this.child?.pid === pid && this.child.exitCode === null && this.child.signalCode === null ? this.child : undefined;
+    const exited = owned ? new Promise<void>((r) => owned.once("exit", () => r())) : Promise.resolve();
     try {
       const rcon = await RconClient.connect(s.rconPort, s.rconPassword, 3000);
       await rcon.command("stop").catch(() => undefined); // the connection drops as the server shuts down
@@ -132,13 +141,15 @@ export class ServerController {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       if (!isAlive(pid)) {
-        rmSync(pidFile(this.ws), { force: true });
+        await Promise.race([exited, sleep(5000)]);
+        if (readPid(this.ws) === pid) rmSync(pidFile(this.ws), { force: true });
         return { wasRunning: true, forced: false };
       }
       await sleep(500);
     }
     process.kill(pid, "SIGKILL");
-    rmSync(pidFile(this.ws), { force: true });
+    await Promise.race([exited, sleep(5000)]);
+    if (readPid(this.ws) === pid) rmSync(pidFile(this.ws), { force: true });
     return { wasRunning: true, forced: true };
   }
 

@@ -108,7 +108,8 @@ sha256 = {}
 [mcflow_server]
 # mcflow's MCP server (mcp-server/ in this repo), shipped as a tarball on the runtime release.
 # Empty until the first runtime release is pinned with scripts/pin_runtime.py; until then
-# `mcflow init` leaves it out of .mcp.json.
+# `mcflow init` leaves it out of .mcp.json. Once pinned, .mcp.json runs `mcflow server mcp`, which
+# checks the tarball against sha256 before running it.
 version = ""
 tarball_url = ""
 sha256 = ""
