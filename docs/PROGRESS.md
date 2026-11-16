@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 6: built (2026-11-16), and waiting for the user at the checkpoint.** The user's "build the next phase" on 2026-11-16 was taken as the go-ahead past the Stage 5 checkpoint. Knowledge-base validation, version matching, `kb pull`, `kb push`, `kb validate`, `kb list` and `mcflow update` are built and tested locally. Still open: the user confirming and creating the shared repo `LadonON/mcflow-knowledge` (6.3, 6.4) and its CI going live there (6.7). `kb push` and `kb pull` have only run against a local git repo so far, not GitHub.
+**Stage 6: built (2026-11-16), and waiting for the user at the checkpoint.** The user's "build the next phase" on 2026-11-16 was taken as the go-ahead past the Stage 5 checkpoint. Knowledge-base validation, version matching, `kb pull`, `kb push`, `kb validate`, `kb list` and `mcflow update` are built and tested locally. The shared repo https://github.com/LadonON/mcflow-knowledge (private) was created the same day, and its CI passed on the first push. A real `kb pull` worked against it. Still open: a first real `kb push` pull request (which also proves the PR side of the CI, 6.7), and whether to protect `main` (6.4a).
 
 ## Session log
 
