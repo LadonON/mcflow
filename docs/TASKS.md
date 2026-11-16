@@ -249,19 +249,24 @@ All art and code are **original**. The reference image and the listing guide the
 
 ## Stage 7: Cross-platform, docs, release
 
-- [ ] 7.1 Extend CI to integration tests (`init`, `doctor`, server control) on all three OSes
+- [x] 7.1 Extend CI to integration tests (`init`, `doctor`, server control) on all three OSes
   - Built 2026-11-16: an `integration` job per OS (pipx-installed wheel, `tools install`, `init`, Paper from PaperMC's API with its SHA-256 checked, `server setup`, `doctor`, `update`, `kb validate`, then `mcp-server/scripts/integration.mjs`: 13 checks of server control and a bot). Passed 13/13 locally on Windows. Also fixed the red `main` CI from Stage 5 (real-ctags tests ran against BSD and Exuberant ctags; the smoke test looked for a removed `.gitkeep`). Ticked once CI passes on GitHub
+  - Done 2026-11-16: passed on GitHub on all three OSes (PRs #3, #4 and #5, and both release workflows). Two infrastructure failures along the way were re-run, not code: a macOS job that never got a runner, and Maven Central answering 429 to one client-mod job
 - [x] 7.2 Write down each platform's limits in `doctor` and the docs
   - Done 2026-11-16: a **Platform** check (OS, CPU, tested in CI or not, limits from the pinned assets) and `docs/PLATFORMS.md`. `mcflow tags` now refuses a ctags that isn't universal-ctags
 - [x] 7.3 Getting-started guide
   - Done 2026-11-16: `docs/GETTING_STARTED.md`, linked from the README
-- [ ] 7.4 Humanize every README and guide with the prose humanizer
+- [x] 7.4 Humanize every README and guide with the prose humanizer
   - 2026-11-16: full pass on the new guide, PLATFORMS.md and the README sections written this stage; every other README scanned for the mechanical tells (dashes, curly quotes, stock phrases), with none found. A full pass on all of them is left for just before the release, once the install instructions change
+  - Done 2026-11-16, after the install instructions changed: all 13 READMEs and guides reviewed against the humanizer patterns. No dashes, curly quotes or stock AI words. Fixed: the README status banner and Node.js row (both still described unfinished stages), mcflow-server's dated status line, and two lists of bold labels. This landed on `main` after the `v0.1.0` tag
 - [x] 7.5 ~~Set up a trusted publisher for the PyPI release (GitHub Actions OIDC)~~ Replaced (user, 2026-11-16): no PyPI for now; users install with pipx from GitHub
   - Done 2026-11-16: `.github/workflows/release.yml`. A `v*` tag runs `scripts/check_release.py` (no dev version, tag matches, runtime pinned), builds and `twine check`s the wheel and sdist, installs the wheel with pipx, then drafts a GitHub release with both attached. The PyPI workflow was removed before it ever ran
 - [x] 7.5c Release prep found while planning 7.5b (2026-11-16)
   - Done: mcflow-server bumped to 0.1.0 and its version read from `package.json`; `npm-shrinkwrap.json` shipped in the tarball; `mcflow server mcp` checks the tarball's SHA-256 before running it (the old `npx -y <url>` never checked it); `pin_runtime.py` writes LF on Windows; personal paths and names removed from tracked files. The real launcher ran mcflow-server 0.1.0 from a checked tarball. Still in older commits: the author email and one full-name path (rewriting history is the user's call)
-- [ ] 7.5b Before 7.7: publish a runtime release (`runtime-v0.1.0`), pin it with `scripts/pin_runtime.py`, and make `LadonON/mcflow` public, since `npx` and `client install` can't download from a private repo's releases
-- [ ] 7.6 **[you]** Approve tagging and publishing the v0.1.0 GitHub release
+- [x] 7.5b Before 7.7: publish a runtime release (`runtime-v0.1.0`), pin it with `scripts/pin_runtime.py`, and make `LadonON/mcflow` public, since `npx` and `client install` can't download from a private repo's releases
+  - Done 2026-11-16: `LadonON/mcflow` made public (user), `runtime-v0.1.0` built by `release-runtime.yml` (dry run first) and published by the user, then pinned in PR #4. Checked against the real release: `init` registers mcflow-server, `mcflow server mcp` downloads and checks the tarball and lists 30 tools, and `client install` downloads a jar whose hash matches its pin
+- [x] 7.6 **[you]** Approve tagging and publishing the v0.1.0 GitHub release
+  - Approved 2026-11-16 ("Yes, merge and tag")
 - [ ] 7.7 Release v0.1.0
+  - 2026-11-16: version bumped in PR #5, `v0.1.0` tagged on `main`, and `release.yml` drafted the release with the wheel and sdist. `pipx install git+https://github.com/LadonON/mcflow.git@v0.1.0` installs 0.1.0 and `init` registers mcflow-server. Ticked once the user publishes the draft
 - [ ] 7.8 **Final checkpoint**

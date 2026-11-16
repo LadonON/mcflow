@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 7: in progress (2026-11-16).** Built: cross-platform integration CI (passes 13/13 locally on Windows, not yet run on GitHub), the doctor Platform check and `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, and a GitHub release workflow with release checks. Waiting on: CI on PR #1, a pinned runtime release and a public repo (7.5b), then approval to tag and publish (7.6).
+**Stage 7: release drafted (2026-11-16).** `runtime-v0.1.0` is published and pinned, `v0.1.0` is tagged on `main`, and its GitHub release is a draft waiting for the user to publish it (7.7). Integration CI passes on Windows, macOS and Linux. Still open: 6.7 (the knowledge repo's CI has not yet run on a real `kb push` pull request), the final checkpoint (7.8), the user's decisions in 3.3b, 4.1b and 5.16a, and the user's go-ahead for the Stage 1, 2 and 5 checkpoints, which isn't recorded.
 
 ## Session log
 
@@ -39,6 +39,9 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - The last CI run on `main` (Stage 5) had failed: the real-ctags tests ran against macOS's BSD ctags and the Windows runner's Exuberant Ctags (they only checked that some `ctags` existed), and the pipx smoke test looked for `.claude/skills/.gitkeep`, which the template no longer has. Fixed both; `mcflow tags` now refuses a non-universal ctags with a clear message, and CI installs universal-ctags on every runner.
 - Integration job per OS, and `mcp-server/scripts/integration.mjs`. Locally on Windows (Java 21, Node 24, Paper 1.21.11 build 132, its SHA-256 matching PaperMC's): 13/13 checks.
 - Added the doctor Platform check, `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, `release-pypi.yml` (replaced the same day by `release.yml`, see Decisions) and `scripts/check_release.py`. 214 tests pass.
+- CI first ran on GitHub with the repo private, and every job was refused for billing. The user made the repo public so Actions run free. After that, CI passed on all three OSes. Two failures were infrastructure and passed on a re-run of the one job: a macOS job that no runner picked up, and Maven Central answering 429 Too Many Requests to one client-mod job.
+- Release: `release-runtime.yml` dry run, then `runtime-v0.1.0` (31 mod jars, the mcflow-server tarball, SHA256SUMS), published by the user and pinned in PR #4. Bumped to 0.1.0 in PR #5, tagged `v0.1.0`, and `release.yml` drafted the release. `pipx install git+https://github.com/LadonON/mcflow.git@v0.1.0` installs 0.1.0, and a new workspace gets mcflow-server.
+- Humanizer pass over all 13 READMEs and guides (7.4), after the tag.
 
 ## Environment (this dev machine, 2026-11-14)
 

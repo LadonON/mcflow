@@ -2,7 +2,7 @@
 
 The MCP server that lets Claude Code (or any MCP client) run a local Paper test server for an mcflow workspace. TypeScript, Node 22+.
 
-**Status (2026-11-15):** the server-control tools, the real-client tools (`client_*`, which drive mcflow's Fabric mod) and the bot tools (`bot_*`) work. The quality gates (`gate_*`) work too.
+It has server-control tools, real-client tools (`client_*`, which drive mcflow's Fabric mod, documented in [client-mod/README.md](../client-mod/README.md)), bot tools (`bot_*`) and quality gates (`gate_*`). Version 0.1.0 ships as a tarball on the `runtime-v0.1.0` release, and `mcflow server mcp` runs it after checking its SHA-256.
 
 ## Tools
 
