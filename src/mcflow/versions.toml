@@ -67,6 +67,7 @@ loader_version = "0.20.1"
 
 [client_mod]
 # mcflow's own Fabric client mod (client-mod/ in this repo). Users must install it.
+# Pinned from release runtime-v0.1.0 by scripts/pin_runtime.py.
 version = "0.1.0"
 minecraft_versions = [
   "1.17",
@@ -101,18 +102,45 @@ minecraft_versions = [
   "26.2",
   "26.3",
 ]
-# Filled in when the mod is released on GitHub; until then install a local build with --jar.
-release_url = ""
-sha256 = {}
+release_url = "https://github.com/LadonON/mcflow/releases/download/runtime-v0.1.0/"
+[client_mod.sha256]
+"1.17" = "021ab32f4a1f67597d4032aefb2e77fb4675dffa8661f9a2f1127985bd5342d8"
+"1.17.1" = "07765459856ed7d05f98006c980b80c0cc1d8784bc8e5941987dbd81e703d375"
+"1.18" = "4ff1df0b2855b9d1afa34a46a54fa759ba7ed1331a382938a0b7474a5149c3fb"
+"1.18.1" = "98da48cd38ea1eea5525a86590c6759802305f3cc6b1307d519f9f0d5f1868ce"
+"1.18.2" = "9f7281dc3245023e53a468cc5ee023ead579eaa00cc75c724d5a48119cda6c19"
+"1.19" = "802377bc1b54d7c6a1f0654adde601c82821279ee59232c7213884f9b4c6254c"
+"1.19.1" = "b37e7ce1d4a305d44a67b4bfafc1b2c60e9dc8e9b073c0e9e77519e648381470"
+"1.19.2" = "afb2ed9616da7e4162ee195f12568951a47318d84890108893eb4c93b1b51580"
+"1.19.3" = "77e860140954d5293ab5db4e52c8e550b25788d8d8ec8a8bb13fa5c80e79e53b"
+"1.19.4" = "5ebc3426ebe74bbdcd3962ffb8c9e0f5cdd33e7bcd7888c85ec33a6c6e8fbc67"
+"1.20" = "2cbcbddfcfb3826f4f88945e1ecd07f1329ce68768e0f6182f5a1122511c910a"
+"1.20.1" = "9a624621318ebc0c1ee64a1c946e757526d5412230f3960f7008c04263524c3a"
+"1.20.2" = "4376a5ee1b7e67da8a2f800c30b288b16ea29c17d475a56a7339ee16b7616f6a"
+"1.20.4" = "afaa632fdfc95e7b8f6c6ad24b4fdd6b24dd7b192885242dc56c2868a9ea9f0a"
+"1.20.5" = "367ebd7175dc56ea0b44fcc1e1f4692719a08d83fecec1d988d1786e3d4c2ef9"
+"1.20.6" = "2f4988fb43cecf232f374a3724583db8fc37b37436d38520d39d752e520ab774"
+"1.21" = "1284f2bb6d1b10eb4b614810c88d3bd916892e9dc044c2362d6e35b674a95048"
+"1.21.1" = "129eb69963fdeeec3b6c27dfd27f96cbce01e99dff014d0f951065e55b176e33"
+"1.21.3" = "97089f46a07ffa7570e2af133fa6a409b86d7e91dd6a8282f6a840947fcfadb6"
+"1.21.4" = "da8527533f6e96ad2cee58d5404ae6dccf47ddcc4af3566c8bcc88e630fb5496"
+"1.21.5" = "33f7cc27bf7874b076082d4991b000bf3f971634d3dc594631f924f98baed0d2"
+"1.21.6" = "d19a81052141c501398c768cee2fa48c7e57fda471ad916c7d9592e2843075d2"
+"1.21.7" = "f39490eca3f82840087bce9430b194dcb7c6dbbb250c868fada95eb2d33b939f"
+"1.21.8" = "d26a7e6b9089f48773dd9f023ebae1529c0e6b2cf92cc4bc514d023f29a651b9"
+"1.21.9" = "4f71ad423cfd0153e1080cd9cdd324491fe936b759ca8797e9c03cd64c7b24d5"
+"1.21.10" = "6b76e41b56df249b79d4e4421e5bcec79dc4fcaacd3b217708a5fb1456e75220"
+"1.21.11" = "ef52813e264d31fb485c1bbab77d9e3c24bc50a519080a3f74bad5de00af4fe3"
+"26.1.1" = "769811127869ed8ec8e6b61c6b3babccfbed399caf1b2bab3ecfa2385a828e62"
+"26.1.2" = "f0c38bbc49c3f4e6865188c7badce8ed2eaf60d1821182610a25c79f650c376c"
+"26.2" = "56ff16000fb067d99bc8d47ae51eff264d064ac164b57f9ae24c3a29045c0c58"
+"26.3" = "9d4eb6d170139d9cd716e05b53d1cf290d13add61c206e11bb748b06888f25f6"
 
 [mcflow_server]
-# mcflow's MCP server (mcp-server/ in this repo), shipped as a tarball on the runtime release.
-# Empty until the first runtime release is pinned with scripts/pin_runtime.py; until then
-# `mcflow init` leaves it out of .mcp.json. Once pinned, .mcp.json runs `mcflow server mcp`, which
-# checks the tarball against sha256 before running it.
-version = ""
-tarball_url = ""
-sha256 = ""
+# Pinned from release runtime-v0.1.0 by scripts/pin_runtime.py.
+version = "0.1.0"
+tarball_url = "https://github.com/LadonON/mcflow/releases/download/runtime-v0.1.0/mcflow-server-0.1.0.tgz"
+sha256 = "083d46fa352295be5b6a39907d3c9aaddb4e124205c6269fc21c78c3e4e115cd"
 
 [humanizer]
 repo = "blader/humanizer"

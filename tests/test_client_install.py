@@ -173,7 +173,10 @@ def test_jar_that_isnt_ours_is_refused(tmp_path):
         install.install(official_dir(tmp_path), "1.21.11", None, local_jar=jar)
 
 
-def test_unreleased_mod_needs_a_local_jar(tmp_path):
+def test_unreleased_mod_needs_a_local_jar(tmp_path, monkeypatch):
+    real = pins()
+    unreleased = {**real["client_mod"], "release_url": "", "sha256": {}}
+    monkeypatch.setattr(install, "pins", lambda: {**real, "client_mod": unreleased})
     with pytest.raises(install.InstallError, match="pass --jar"):
         install.install(official_dir(tmp_path), "1.21.11", None, local_jar=None)
 
