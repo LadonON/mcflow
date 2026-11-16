@@ -2,7 +2,7 @@
 
 The MCP server that lets Claude Code (or any MCP client) run a local Paper test server for an mcflow workspace. TypeScript, Node 22+.
 
-**Status (2026-11-15):** the server-control tools, the real-client tools (`client_*`, which drive mcflow's Fabric mod) and the bot tools (`bot_*`) work. The performance, memory and thread-safety gates are still to come (Stage 4).
+**Status (2026-11-15):** the server-control tools, the real-client tools (`client_*`, which drive mcflow's Fabric mod) and the bot tools (`bot_*`) work. The quality gates (`gate_*`) work too.
 
 ## Tools
 
@@ -43,6 +43,17 @@ Bots are [mineflayer](https://github.com/PrismarineJS/mineflayer) clients that j
 **Swarm reports.** Two things show up in every swarm and are reported separately rather than as problems. (1) Paper logs a few "moved too quickly!" warnings for each bot in the first seconds after it joins, at its spawn point; nothing moves. (2) When bots leave quickly, Paper logs "Failed to deliver packet" for messages meant for a connection that just closed. A swarm needs `max-players` at least as high as its bot count; `mcflow server setup` sets 200.
 
 **Debugging.** Set `MCFLOW_BOT_TRACE=1` in mcflow-server's environment to log each bot's non-routine packets to stderr.
+
+### Quality gates
+
+| Tool | Passes when |
+|---|---|
+| `gate_performance` | A bot swarm (10 bots using `/menu` by default) runs while Paper's `mspt` is sampled every 5 s. The 95th-percentile 5-second average tick time is at most 50 ms, and the median hasn't risen more than 25% (and 1 ms) over the saved baseline in `.mcflow/gates/perf-<name>.json`. The first run records the baseline. `profile: true` saves a spark profile **locally**. |
+| `gate_memory` | Cycles of bots joining, using the feature and leaving; class histograms (`jcmd`, after a full GC, no bots online) after a warm-up, after N cycles and after 2N. No class from the plugin's package, and no Bukkit listener registration or scheduled task, grows at both steps. Needs a full JDK (for `jcmd`). |
+| `gate_thread_safety` | No main-thread-only Bukkit call inside code that runs on another thread (async tasks, futures, threads, Netty handlers, async events) without a `runTask` hop; and no "Asynchronous …!" catch in the server log since `sinceLine`. The static half is a heuristic over source text. |
+| `gate_resource_pack` | `pack.mcmeta` and the pack format match the server, all JSON parses, every referenced texture, model and font exists (in the pack, or in the Minecraft client jar for `minecraft:` references), and bitmap fonts obey the game's rules (ascent no greater than height, equal-length `chars` rows, a texture that divides into the glyph grid). |
+
+**spark stays local.** Paper bundles spark, and some spark commands upload to spark.lucko.me (`spark health` always does; a profile with `--timeout`, or stopped without `--save-to-file`, does too). The gates only ever run `spark profiler start` (no timeout), `spark profiler stop --save-to-file` and Paper's `mspt`. spark records every upload in `server/plugins/spark/activity.json`; `scripts/gates-live.mjs` checks it.
 
 ## How it finds things
 

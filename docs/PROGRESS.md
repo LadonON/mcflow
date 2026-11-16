@@ -115,6 +115,9 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 - **Bot swarms (2026-11-15):** `bot_swarm` passed 8/8 live runs, up to 50 bots, including 70 `/menu` opens and closes under load. `mcflow server setup` now sets `max-players=200` so swarms aren't refused.
 
+- **Quality gates (2026-11-15):** `gate_performance`, `gate_memory`, `gate_thread_safety` and `gate_resource_pack` work; the /menu slice passed all of them live (median tick 5.8 ms with 10 bots in the menu, no leaks over 7 cycles, no async calls, every pack reference present). `mcflow server setup` installs ViaBackwards when bots need it, and `doctor` reports how bots join.
+- **spark uploads (2026-11-15):** Paper's bundled spark uploads some results to spark.lucko.me. One `spark health` report was uploaded during research before this was known; the user was told. mcflow now uses only local-only spark commands, and the live gate test checks spark's activity log for uploads.
+
 ## Open questions
 
 

@@ -161,17 +161,25 @@ All art and code are **original**. The reference image and the listing guide the
 
 - [x] 4.1 **[research]** mineflayer: which versions it supports (including 26.x), and how it behaves in offline mode
   - Done 2026-11-15: `docs/research/Stage 4 Bots.md`. mineflayer 4.39.0 tops out at 26.1, so bots join the 26.3 server through **ViaBackwards 5.12.2** (installed with the user's OK, hash checked). Two mineflayer bugs needed workarounds: the resource-pack reply's UUID, and the missing `tick_end` packet. With both, a probe passed 10/10 (join, chat, look, walk, /menu, sneak closing it, five bots at once)
-- [ ] 4.1a `mcflow server setup` installs ViaBackwards (pinned SHA-256) when the server is newer than mineflayer supports; `doctor` reports it. Report both mineflayer bugs upstream (**[you]** approve before anything is posted)
+- [x] 4.1a `mcflow server setup` installs ViaBackwards (pinned SHA-256) when the server is newer than mineflayer supports; `doctor` reports it
+  - Done 2026-11-15: `versions.toml` pins ViaBackwards 5.12.2 and records mineflayer's newest version (`[bots]`); setup installs it only when needed, and `doctor`'s new "Test bots" check says how bots join (ok on the demo: 26.1 through ViaBackwards). 3 new tests
+- [ ] 4.1b **[you]** Approve reporting the two mineflayer bugs upstream (the UUID in the resource-pack reply, and the missing `tick_end`). Nothing is posted without approval
 - [x] 4.2 `bot_join`, `bot_leave`, `bot_chat`, `bot_move`, `bot_look`, `bot_use_item`, `bot_inventory`, `bot_click_window_slot`, `bot_status`
   - Done 2026-11-15: `mcp-server/src/bots.ts` plus the nine tools in `src/index.ts`. 49 unit tests pass (15 new), and a live run through the MCP server passed 30/30 (details in `docs/research/Stage 4 Bots.md`). Bots join the 26.3 server as 26.1 through ViaBackwards, with both mineflayer workarounds. `MCFLOW_BOT_TRACE=1` logs packets. Inside spawn protection, non-operator bots can't use blocks, and the tool says so
 - [x] 4.3 `bot_swarm(count, behavior)`, with defined behaviors (idle, wander, use-feature, join-leave loop)
   - Done 2026-11-15: `mcp-server/src/swarm.ts` plus the `bot_swarm` tool. 61 unit tests pass (12 new), and the live run passed 8/8 (`scripts/swarm-live.mjs`): idle ×10 and ×50, wander ×10, `/menu` ×10, join_leave ×10. The "moved too quickly!" warnings are a harmless join-time artefact, reported separately. The test server's `max-players` (20) refused bots 21–50; setup now sets 200
-- [ ] 4.4 **[research]** spark: installation, profiler commands, and reading MSPT and its reports from the command line or RCON
-- [ ] 4.5 Performance gate: record MSPT before and after, and flag regressions against a threshold
-- [ ] 4.6 Memory gate: repeated join, leave and use cycles, then check for leaked listeners, tasks and per-player maps (heap and object counts)
-- [ ] 4.7 Thread-safety gate: static checks plus runtime detection of async access to the Bukkit API
-- [ ] 4.8 Resource-pack gate: `pack_format`, and that every model, texture and font it references is present
-- [ ] 4.9 Run the slice through every gate
+- [x] 4.4 **[research]** spark: installation, profiler commands, and reading MSPT and its reports from the command line or RCON
+  - Done 2026-11-15: `docs/research/Stage 4 spark and gates.md`. Paper 26.3 bundles spark 1.10.191. **Some spark commands upload to spark.lucko.me** (`spark health` always; timed profiles; stops without `--save-to-file`), and one health report was uploaded during the research (the user was told). The gates use only local-only commands and Paper's `mspt`, which, unlike `spark tps`, replies over RCON
+- [x] 4.5 Performance gate: record MSPT before and after, and flag regressions against a threshold
+  - Done 2026-11-15: `gate_performance`. It samples `mspt` every 5 s during a swarm; fails on p95 over 50 ms or a median regression over 25% (and 1 ms) against a saved baseline; optional local spark profile
+- [x] 4.6 Memory gate: repeated join, leave and use cycles, then check for leaked listeners, tasks and per-player maps (heap and object counts)
+  - Done 2026-11-15: `gate_memory`. `jcmd` class histograms after a warm-up, N cycles and 2N cycles; a plugin class, listener registration or scheduled task that grows at both steps is a leak. Heap reported
+- [x] 4.7 Thread-safety gate: static checks plus runtime detection of async access to the Bukkit API
+  - Done 2026-11-15: `gate_thread_safety`. A static scan for main-thread-only Bukkit calls in async tasks, futures, threads, Netty handlers and async events (a heuristic over source text), plus Paper's async catches in the server log
+- [x] 4.8 Resource-pack gate: `pack_format`, and that every model, texture and font it references is present
+  - Done 2026-11-15: `gate_resource_pack`. Pack format, JSON, every texture, model and font reference (`minecraft:` ones against the client jar), and bitmap-font rules: ascent no greater than height, equal `chars` rows, a texture that fits the grid. It would have caught the Stage 3 missing-glyph bug
+- [x] 4.9 Run the slice through every gate
+  - Done 2026-11-15: the /menu slice passed every gate live, 6/6 (`scripts/gates-live.mjs`; results in the research doc), with no spark uploads. 81 mcflow-server tests (20 new) and 111 Python tests pass
 - [ ] 4.10 **Checkpoint:** show the results and wait for the go-ahead
 
 ## Stage 5: Skills, agents, TokToken, unsupported languages

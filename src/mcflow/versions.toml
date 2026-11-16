@@ -38,6 +38,18 @@ url = "https://hangarcdn.papermc.io/plugins/ViaVersion/ViaVersion/versions/5.12.
 sha256 = "c0b63badcb0f7d38f4443e06820f2b8142dd4f0d3b0511f9330ff1050430e6b2"
 minimum_java = 17
 
+[viabackwards]
+# Hangar Release channel. Lets older clients join a newer server: mcflow's test bots speak mineflayer's newest
+# version (below), so they need it whenever the server is newer than that.
+version = "5.12.2"
+url = "https://hangarcdn.papermc.io/plugins/ViaVersion/ViaBackwards/versions/5.12.2/PAPER/ViaBackwards-5.12.2.jar"
+sha256 = "e989440e0aad7e12d4685d7a57df854691b67660966a95ec0450e20ce98e87ab"
+
+[bots]
+# Keep in step with mcp-server's mineflayer pin (4.39.0): its newest supported Minecraft version.
+mineflayer = "4.39.0"
+mineflayer_latest = "26.1"
+
 [fabric]
 # Official Fabric installer (maven.fabricmc.net); SHA-256 matches the maven's own .sha256 file.
 installer_version = "1.1.2"

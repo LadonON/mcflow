@@ -317,6 +317,34 @@ def check_client_mod(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
     return CheckResult(name, Status.OK, f"{jars[-1].name} in {mods}")
 
 
+def check_bots(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
+    """Test bots (mineflayer) speak up to one Minecraft version; newer servers need ViaBackwards."""
+    name = "Test bots"
+    bots = pins()["bots"]
+    latest = bots["mineflayer_latest"]
+    if ctx.paper is None or ctx.project_root is None:
+        return CheckResult(name, Status.WARN, "Not inside an mcflow project; can't check.")
+    if ctx.paper.key <= tuple(int(x) for x in latest.split(".")):
+        return CheckResult(
+            name, Status.OK, f"mineflayer {bots['mineflayer']} speaks {ctx.paper.id}"
+        )
+    plugins = ctx.project_root / "server" / "plugins"
+    if any(plugins.glob("ViaBackwards-*.jar")):
+        return CheckResult(
+            name,
+            Status.OK,
+            f"Bots join as {latest} (mineflayer's newest); "
+            f"ViaBackwards translates for {ctx.paper.id}",
+        )
+    return CheckResult(
+        name,
+        Status.FAIL,
+        f"Bots speak up to {latest}, and this {ctx.paper.id} server has no ViaBackwards, "
+        "so they can't join.",
+        "Run: mcflow server setup   (it installs ViaBackwards)",
+    )
+
+
 ALL_CHECKS: list[Check] = [
     check_paper_version,
     check_java,
@@ -327,4 +355,5 @@ ALL_CHECKS: list[Check] = [
     check_git,
     check_gh,
     check_client_mod,
+    check_bots,
 ]

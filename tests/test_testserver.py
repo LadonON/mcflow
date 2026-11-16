@@ -25,7 +25,9 @@ def make_paper_jar(path: Path, version: str) -> Path:
 
 
 def fake_viaversion(url: str) -> bytes:
-    return b"pretend this is ViaVersion"
+    return (
+        b"pretend this is ViaBackwards" if "ViaBackwards" in url else b"pretend this is ViaVersion"
+    )
 
 
 @pytest.fixture
@@ -37,6 +39,10 @@ def via_pin(monkeypatch):
         "viaversion": {
             **real["viaversion"],
             "sha256": hashlib.sha256(fake_viaversion("")).hexdigest(),
+        },
+        "viabackwards": {
+            **real["viabackwards"],
+            "sha256": hashlib.sha256(fake_viaversion("ViaBackwards")).hexdigest(),
         },
     }
     monkeypatch.setattr(setup, "pins", lambda: patched)
@@ -182,3 +188,36 @@ def test_no_suitable_java_fails_clearly(tmp_path, fake_env, via_pin):
     fake_env.add_jdk(fake_env.home / ".jdks" / "jdk-17", "17.0.13")
     with pytest.raises(setup.SetupError, match="Java 21 or newer"):
         setup.run(root, CONFIG, accept_eula=False, env=fake_env, fetch=fake_viaversion)
+
+
+# --- ViaBackwards for test bots ---
+
+
+def test_bots_need_viabackwards_only_above_mineflayers_newest(via_pin):
+    latest = via_pin["bots"]["mineflayer_latest"]  # 26.1
+    assert setup.bots_need_viabackwards("26.3")
+    assert not setup.bots_need_viabackwards(latest)
+    assert not setup.bots_need_viabackwards("1.21.11")
+
+
+def test_setup_installs_viabackwards_for_a_newer_server(tmp_path, via_pin, fake_env):
+    workspace = tmp_path / "ws"
+    newer = ProjectConfig("Shiny", "26.3", 25, "LadonON/mcflow-knowledge")
+    scaffold.create(workspace, newer)
+    make_paper_jar(workspace / "server" / "paper-26.3-1.jar", "26.3")
+    fake_env.add_jdk(fake_env.home / ".jdks" / "jdk-25", "25.0.2")
+    result = setup.run(workspace, newer, accept_eula=False, env=fake_env, fetch=fake_viaversion)
+    jar = (
+        workspace / "server" / "plugins" / f"ViaBackwards-{via_pin['viabackwards']['version']}.jar"
+    )
+    assert result.viabackwards == "installed"
+    assert jar.read_bytes() == b"pretend this is ViaBackwards"
+    assert any("ViaBackwards lets them join" in n for n in result.notes)
+
+
+def test_setup_skips_viabackwards_when_bots_speak_the_servers_version(workspace, via_pin, fake_env):
+    result = setup.run(
+        workspace, CONFIG, accept_eula=False, env=fake_env, fetch=fake_viaversion
+    )  # 1.21.11
+    assert result.viabackwards == "not needed"
+    assert not list((workspace / "server" / "plugins").glob("ViaBackwards-*.jar"))

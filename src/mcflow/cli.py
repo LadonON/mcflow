@@ -209,6 +209,10 @@ def server_setup(
     console.print(f"  RCON:         127.0.0.1:{s.rcon_port}, password in .mcflow/local.toml")
     console.print(f"  Pack server:  http://127.0.0.1:{s.pack_port}/")
     console.print(f"  ViaVersion:   {pins()['viaversion']['version']} ({result.viaversion})")
+    if result.viabackwards != "not needed":
+        console.print(
+            f"  ViaBackwards: {pins()['viabackwards']['version']} ({result.viabackwards})"
+        )
     for note in result.notes:
         console.print(f"  [yellow]{note}[/]")
     if not result.eula_accepted:

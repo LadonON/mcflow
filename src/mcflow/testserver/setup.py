@@ -30,6 +30,7 @@ class SetupResult:
     jar: paperjar.PaperJar
     java_version: str
     viaversion: str  # "installed", "already installed"
+    viabackwards: str  # "installed", "already installed", "not needed"
     eula_accepted: bool
     notes: list[str] = field(default_factory=list)
 
@@ -95,23 +96,42 @@ def java_executable(env: SystemEnv, jdk: java.Jdk) -> Path:
     return jdk.home / "bin" / ("java.exe" if env.os_name == "windows" else "java")
 
 
-def install_viaversion(plugins_dir: Path, fetch: Fetch) -> str:
-    pin = pins()["viaversion"]
-    target = plugins_dir / f"ViaVersion-{pin['version']}.jar"
+def install_pinned_plugin(name: str, pin: dict, plugins_dir: Path, fetch: Fetch) -> str:
+    """Download a pinned plugin jar, checking its SHA-256; replace older versions of it."""
+    target = plugins_dir / f"{name}-{pin['version']}.jar"
     if target.is_file() and hashlib.sha256(target.read_bytes()).hexdigest() == pin["sha256"]:
         return "already installed"
     data = fetch(pin["url"])
     digest = hashlib.sha256(data).hexdigest()
     if digest != pin["sha256"]:
         raise SetupError(
-            f"ViaVersion download failed its checksum (got {digest}, expected {pin['sha256']}). "
+            f"{name} download failed its checksum (got {digest}, expected {pin['sha256']}). "
             "Nothing was installed."
         )
     plugins_dir.mkdir(parents=True, exist_ok=True)
-    for old in plugins_dir.glob("ViaVersion-*.jar"):
+    for old in plugins_dir.glob(f"{name}-*.jar"):
         old.unlink()
     target.write_bytes(data)
     return "installed"
+
+
+def install_viaversion(plugins_dir: Path, fetch: Fetch) -> str:
+    return install_pinned_plugin("ViaVersion", pins()["viaversion"], plugins_dir, fetch)
+
+
+def _version_key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) for part in version.split(".") if part.isdigit())
+
+
+def bots_need_viabackwards(paper_version: str) -> bool:
+    """True when the server is newer than the newest version mineflayer (the test bots) speaks."""
+    return _version_key(paper_version) > _version_key(pins()["bots"]["mineflayer_latest"])
+
+
+def install_viabackwards(plugins_dir: Path, paper_version: str, fetch: Fetch) -> str:
+    if not bots_need_viabackwards(paper_version):
+        return "not needed"
+    return install_pinned_plugin("ViaBackwards", pins()["viabackwards"], plugins_dir, fetch)
 
 
 def run(
@@ -171,6 +191,7 @@ def run(
     )
 
     via = install_viaversion(server_dir / "plugins", fetch)
+    backwards = install_viabackwards(server_dir / "plugins", config.paper_version, fetch)
 
     eula = server_dir / "eula.txt"
     eula_accepted = eula.is_file() and "eula=true" in eula.read_text(encoding="utf-8")
@@ -182,10 +203,16 @@ def run(
         )
         eula_accepted = True
 
-    result = SetupResult(settings, jar, jdk.version, via, eula_accepted)
+    result = SetupResult(settings, jar, jdk.version, via, backwards, eula_accepted)
     if jdk.major > config.java_minimum and config.java_minimum < minimum:
         result.notes.append(
             f"Using Java {jdk.major}: Paper needs {config.java_minimum}+, "
             f"ViaVersion needs {minimum}+."
+        )
+    if backwards != "not needed":
+        result.notes.append(
+            f"Test bots speak Minecraft {pins()['bots']['mineflayer_latest']} "
+            "(mineflayer's newest); "
+            f"ViaBackwards lets them join this {config.paper_version} server."
         )
     return result

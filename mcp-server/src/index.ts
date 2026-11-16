@@ -3,19 +3,23 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import { z } from "zod";
 import { BotManager, inSpawnProtection, toMineflayerAngles } from "./bots.js";
 import { attach, loadClientState, screenshotPath, waitFor, type BridgeClient, type ClientStatus } from "./client.js";
 import { buildPlugin } from "./deploy.js";
 import { readLog } from "./logs.js";
-import { buildPack } from "./pack.js";
+import { buildPack, expectedPackFormat, validate } from "./pack.js";
 import { PackServer } from "./packServer.js";
 import { readProperties, updateProperties } from "./properties.js";
 import { runCommand } from "./rcon.js";
 import { ServerController } from "./serverProcess.js";
 import { BEHAVIORS, classifyMovementWarnings, parseTps, runSwarm } from "./swarm.js";
+import { findLeaks, judgePerformance, parseHeapUsedMb, parseHistogram, parseMspt, scanAsyncLog, scanThreadSafety, summariseMspt, type MsptSummary, type Window } from "./gates.js";
+import { checkPack, listJarAssets } from "./packcheck.js";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { loadLocal, loadWorkspace, McflowError, type Workspace } from "./workspace.js";
 
 const VERSION = "0.1.0-dev.0";
@@ -688,6 +692,283 @@ mcp.registerTool(
           joinTimeCorrections: moves.atJoin,
           examples: moves.later.slice(0, 5),
         },
+      });
+    }),
+);
+
+// ---- Quality gates -----------------------------------------------------------------------------------------
+
+const execFileP = promisify(execFile);
+const rcon = (cmd: string) => {
+  const s = context().local();
+  return runCommand(s.rconPort, s.rconPassword, cmd);
+};
+function pluginDir(project: string) {
+  if (!/^[\w.-]+$/.test(project)) throw new McflowError(`"${project}" isn't a valid project folder name.`);
+  const dir = join(context().ws.root, "plugins", project);
+  if (!existsSync(dir)) throw new McflowError(`No plugin project at plugins/${project}/.`);
+  return dir;
+}
+/** The plugin's Java package, from plugin.yml's main class (dev.mcflow.menu.MenuPlugin → dev.mcflow.menu). */
+function pluginPackage(project: string): string {
+  const yml = join(pluginDir(project), "src", "main", "resources", "plugin.yml");
+  const main = existsSync(yml) ? readFileSync(yml, "utf8").match(/^main:\s*['"]?([\w.]+)/m)?.[1] : undefined;
+  if (!main) throw new McflowError(`Couldn't read the main class from plugins/${project}/src/main/resources/plugin.yml.`);
+  return main.slice(0, main.lastIndexOf("."));
+}
+function javaFiles(dir: string): { path: string; text: string }[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir).flatMap((n) => {
+    const p = join(dir, n);
+    if (statSync(p).isDirectory()) return javaFiles(p);
+    return n.endsWith(".java") ? [{ path: p, text: readFileSync(p, "utf8") }] : [];
+  });
+}
+async function jcmd(command: string): Promise<string> {
+  const { ws, local } = context();
+  const pidFile = join(ws.stateDir, "server.pid");
+  if (!existsSync(pidFile)) throw new McflowError("The test server isn't running (no .mcflow/server.pid). Start it with server_start.");
+  const pid = readFileSync(pidFile, "utf8").trim();
+  const java = local().java;
+  const tool = join(java, "..", process.platform === "win32" ? "jcmd.exe" : "jcmd");
+  if (!existsSync(tool)) throw new McflowError(`No jcmd next to the server's Java (${java}). The memory gate needs a full JDK, not a JRE.`);
+  const { stdout } = await execFileP(tool, [pid, command], { maxBuffer: 256 << 20 });
+  return stdout;
+}
+
+mcp.registerTool(
+  "gate_performance",
+  {
+    title: "Performance gate: tick times under load",
+    description:
+      "Run a bot swarm (by default 10 bots using featureCommand) and sample Paper's `mspt` every 5 s. Fails if the " +
+      "95th-percentile 5-second average tick time is over maxAvgMs, or if the median rose more than " +
+      "maxRegressionPct (and minRegressionMs) over the saved baseline for `baseline`. The first run, or " +
+      "saveBaseline, records the baseline. profile saves a spark profile locally (never uploaded).",
+    inputSchema: {
+      baseline: z.string().regex(/^[\w-]+$/).default("default"),
+      saveBaseline: z.boolean().default(false),
+      count: z.number().int().min(1).max(200).default(10),
+      behavior: z.enum(BEHAVIORS).default("use_feature"),
+      durationSeconds: z.number().int().min(15).max(600).default(60),
+      featureCommand: z.string().min(1).default("/menu"),
+      featureClose: z.string().min(1).default("sneak"),
+      maxAvgMs: z.number().positive().default(50),
+      maxRegressionPct: z.number().positive().default(25),
+      minRegressionMs: z.number().min(0).default(1),
+      profile: z.boolean().default(false),
+    },
+  },
+  (o) =>
+    guard(async () => {
+      const { ws } = context();
+      const scenario = { count: o.count, behavior: o.behavior, durationSeconds: o.durationSeconds, featureCommand: o.featureCommand };
+      const baseFile = join(ws.stateDir, "gates", `perf-${o.baseline}.json`);
+      const stored = existsSync(baseFile) ? (JSON.parse(readFileSync(baseFile, "utf8")) as { scenario: typeof scenario; summary: MsptSummary; date: string }) : undefined;
+      const comparable = stored && JSON.stringify(stored.scenario) === JSON.stringify(scenario);
+
+      const sample = async () => parseMspt(await rcon("mspt"))?.s5;
+      const idle: Window[] = [];
+      for (let i = 0; i < 2; i++) {
+        await sleep(5000);
+        const w = await sample();
+        if (w) idle.push(w);
+      }
+      const sparkDir = join(ws.serverDir, "plugins", "spark");
+      if (o.profile) await rcon("spark profiler start --interval 10"); // no --timeout: a timed profile uploads itself
+
+      const windows: Window[] = [];
+      let running = true;
+      const sampler = (async () => {
+        await sleep(5000); // let the swarm join before the first window
+        while (running) {
+          const w = await sample().catch(() => undefined);
+          if (w) windows.push(w);
+          await sleep(5000);
+        }
+      })();
+      const swarm = await runSwarm(bots, {
+        count: o.count,
+        behavior: o.behavior,
+        durationMs: o.durationSeconds * 1000,
+        staggerMs: 200,
+        namePrefix: "Perf",
+        featureCommand: o.featureCommand,
+        featureClose: o.featureClose,
+        featureHoldMs: 3000,
+      });
+      running = false;
+      await sampler;
+
+      let profileFile: string | undefined;
+      if (o.profile) {
+        const before = new Set(existsSync(sparkDir) ? readdirSync(sparkDir) : []);
+        await rcon("spark profiler stop --save-to-file");
+        for (let i = 0; i < 20 && !profileFile; i++) {
+          await sleep(500);
+          profileFile = (existsSync(sparkDir) ? readdirSync(sparkDir) : []).find((n) => n.endsWith(".sparkprofile") && !before.has(n));
+        }
+      }
+
+      const load = summariseMspt(windows);
+      const verdict = judgePerformance(load, comparable ? stored.summary : undefined, {
+        maxAvgMs: o.maxAvgMs,
+        maxRegressionPct: o.maxRegressionPct,
+        minRegressionMs: o.minRegressionMs,
+      });
+      let baselineNote: string;
+      if (o.saveBaseline || !stored) {
+        mkdirSync(join(ws.stateDir, "gates"), { recursive: true });
+        writeFileSync(baseFile, JSON.stringify({ scenario, summary: load, date: new Date().toISOString() }, null, 2));
+        baselineNote = stored ? "baseline replaced with this run" : "no baseline yet: this run is now the baseline";
+      } else {
+        baselineNote = comparable ? `compared with the baseline from ${stored.date}` : "baseline is for a different scenario; not compared (pass saveBaseline to replace it)";
+      }
+      return ok({
+        pass: verdict.pass && swarm.failedJoins.length === 0 && swarm.kicked.length === 0,
+        failures: [
+          ...verdict.failures,
+          ...(swarm.failedJoins.length ? [`${swarm.failedJoins.length} bots failed to join`] : []),
+          ...(swarm.kicked.length ? [`${swarm.kicked.length} bots were kicked`] : []),
+        ],
+        idle: idle.length ? summariseMspt(idle) : undefined,
+        load,
+        baseline: comparable ? stored.summary : undefined,
+        regression: verdict.regression,
+        baselineNote,
+        swarm: { joined: swarm.joined, actions: swarm.actions, kicked: swarm.kicked, failedJoins: swarm.failedJoins },
+        profile: profileFile ? join(sparkDir, profileFile) : undefined,
+      });
+    }),
+);
+
+mcp.registerTool(
+  "gate_memory",
+  {
+    title: "Memory gate: leaks over join/use/leave cycles",
+    description:
+      "Run cycles of bots joining, using featureCommand and leaving, and take class histograms (jcmd, after a full " +
+      "GC) with no bots online: after a warm-up cycle, after cyclesPerStep cycles and after twice that. A class from " +
+      "the plugin's package, or Bukkit listener registrations or scheduled tasks, that grows at both steps is a leak.",
+    inputSchema: {
+      project: z.string().min(1).describe("Folder name under plugins/"),
+      botsPerCycle: z.number().int().min(1).max(50).default(5),
+      cyclesPerStep: z.number().int().min(1).max(20).default(3),
+      cycleSeconds: z.number().int().min(5).max(120).default(10),
+      featureCommand: z.string().min(1).default("/menu"),
+      featureClose: z.string().min(1).default("sneak"),
+    },
+  },
+  (o) =>
+    guard(async () => {
+      const pkg = pluginPackage(o.project);
+      const cycle = () =>
+        runSwarm(bots, {
+          count: o.botsPerCycle,
+          behavior: "use_feature",
+          durationMs: o.cycleSeconds * 1000,
+          staggerMs: 100,
+          namePrefix: "Mem",
+          featureCommand: o.featureCommand,
+          featureClose: o.featureClose,
+          featureHoldMs: 2000,
+        });
+      const snapshot = async () => {
+        await sleep(3000); // let quits finish
+        const histogram = parseHistogram(await jcmd("GC.class_histogram")); // forces a full GC first
+        return { histogram, heapMb: parseHeapUsedMb(await jcmd("GC.heap_info")) };
+      };
+      const problems: string[] = [];
+      const run = async (n: number) => {
+        for (let i = 0; i < n; i++) {
+          const r = await cycle();
+          if (r.failedJoins.length || r.kicked.length) problems.push(`cycle: ${r.failedJoins.length} failed joins, ${r.kicked.length} kicked`);
+        }
+      };
+      await run(1);
+      const a = await snapshot();
+      await run(o.cyclesPerStep);
+      const b = await snapshot();
+      await run(o.cyclesPerStep);
+      const c = await snapshot();
+      const leaks = findLeaks(a.histogram, b.histogram, c.histogram, pkg);
+      const pluginClasses = [...new Set([...a.histogram.keys(), ...c.histogram.keys()])]
+        .filter((n) => n.startsWith(pkg + ".") || n === "org.bukkit.plugin.RegisteredListener" || n === "org.bukkit.craftbukkit.scheduler.CraftTask")
+        .sort()
+        .map((n) => ({ class: n, warmup: a.histogram.get(n) ?? 0, afterN: b.histogram.get(n) ?? 0, after2N: c.histogram.get(n) ?? 0 }));
+      return ok({
+        pass: leaks.length === 0 && problems.length === 0,
+        leaks,
+        problems,
+        pluginPackage: pkg,
+        cycles: 1 + 2 * o.cyclesPerStep,
+        botsPerCycle: o.botsPerCycle,
+        heapUsedMb: { warmup: a.heapMb, afterN: b.heapMb, after2N: c.heapMb },
+        classes: pluginClasses,
+      });
+    }),
+);
+
+mcp.registerTool(
+  "gate_thread_safety",
+  {
+    title: "Thread-safety gate",
+    description:
+      "Static: scan plugins/<project>/src/main/java for main-thread-only Bukkit calls inside code that runs on " +
+      "another thread (async tasks, futures, threads, Netty handlers, async events), unless they hop back with " +
+      "runTask. Runtime: scan the server log (from sinceLine, or all of latest.log) for Paper's 'Asynchronous …!' " +
+      "catches. Run it after a load run (bot_swarm, gate_performance or gate_memory) so the runtime half has data.",
+    inputSchema: { project: z.string().min(1), sinceLine: z.number().int().min(1).optional() },
+  },
+  ({ project, sinceLine }) =>
+    guard(async () => {
+      const dir = pluginDir(project);
+      const files = javaFiles(join(dir, "src", "main", "java"));
+      const staticFindings = scanThreadSafety(files).map((f) => ({ ...f, file: relative(dir, f.file).split("\\").join("/") }));
+      const log = readLog(join(context().ws.serverDir, "logs", "latest.log"), sinceLine);
+      const runtime = scanAsyncLog([...log.entries.map((e) => e.text), ...log.problems.map((p) => p.text)]);
+      return ok({
+        pass: staticFindings.length === 0 && runtime.length === 0,
+        static: { filesScanned: files.length, findings: staticFindings },
+        runtime: { logLines: log.entries.length, findings: [...new Set(runtime)].slice(0, 20) },
+        note: "The static scan is a heuristic: it reads source text, so it can miss calls made through helper methods.",
+      });
+    }),
+);
+
+mcp.registerTool(
+  "gate_resource_pack",
+  {
+    title: "Resource-pack gate",
+    description:
+      "Check resourcepacks/<pack>: pack.mcmeta and the pack format for the server's version, valid JSON, and that " +
+      "every texture, model and font the pack references exists (in the pack, or in the Minecraft client jar for " +
+      "minecraft: references, when it can be found). Also enforces the font rules the game applies: ascent no " +
+      "greater than height, equal-length chars rows, and textures that divide into the glyph grid.",
+    inputSchema: { pack: z.string().regex(/^[\w.-]+$/) },
+  },
+  ({ pack }) =>
+    guard(async () => {
+      const { ws } = context();
+      const dir = join(ws.root, "resourcepacks", pack);
+      if (!existsSync(dir)) throw new McflowError(`No resource pack folder at resourcepacks/${pack}/.`);
+      const { issues, packFormat } = validate(dir);
+      const expected = expectedPackFormat(ws);
+      if (expected !== undefined && typeof packFormat === "number" && packFormat !== expected) {
+        issues.push({ file: "pack.mcmeta", problem: `pack format is ${packFormat}, but Minecraft ${ws.paperVersion} expects ${expected}` });
+      }
+      const appdata = process.env.APPDATA ?? join(process.env.HOME ?? "", process.platform === "darwin" ? "Library/Application Support" : "");
+      const jarCandidates = [join(appdata, ".minecraft", "versions", ws.paperVersion, `${ws.paperVersion}.jar`), join(appdata, "minecraft", "versions", ws.paperVersion, `${ws.paperVersion}.jar`)];
+      const clientJar = jarCandidates.find((j) => existsSync(j));
+      const refs = checkPack(dir, clientJar ? listJarAssets(clientJar) : undefined);
+      const all = [...issues, ...refs.issues];
+      return ok({
+        pass: all.length === 0,
+        issues: all,
+        packFormat,
+        expectedPackFormat: expected,
+        checked: refs.checked,
+        vanillaReferences: clientJar ? `checked against ${clientJar}` : `${refs.unverifiedVanilla} minecraft: references not checked (no client jar found)`,
       });
     }),
 );

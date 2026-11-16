@@ -196,3 +196,20 @@ def test_doctor_fails_until_the_mod_is_installed(tmp_path, fake_env):
 
     other = DoctorContext(paper=PaperVersion("26.3", 25, True), project_root=tmp_path)
     assert "targets 26.3" in checks.check_client_mod(fake_env, other).summary
+
+
+def test_doctor_reports_how_bots_join(tmp_path, fake_env):
+    native = DoctorContext(paper=PaperVersion("1.21.11", 21, False), project_root=tmp_path)
+    assert checks.check_bots(fake_env, native).status is Status.OK
+
+    newer = DoctorContext(paper=PaperVersion("26.3", 25, True), project_root=tmp_path)
+    missing = checks.check_bots(fake_env, newer)
+    assert missing.status is Status.FAIL
+    assert "mcflow server setup" in missing.fix
+
+    plugins = tmp_path / "server" / "plugins"
+    plugins.mkdir(parents=True)
+    (plugins / "ViaBackwards-5.12.2.jar").write_bytes(b"jar")
+    ready = checks.check_bots(fake_env, newer)
+    assert ready.status is Status.OK
+    assert "ViaBackwards translates" in ready.summary
