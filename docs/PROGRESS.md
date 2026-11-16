@@ -11,7 +11,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 ### 2026-11-14: setup and Stage 1
 
 - Copied the spec, created PROGRESS.md and TASKS.md, and collected the Stage 1 answers.
-- Repo on the dev machine. GitHub: `LadonON/mcflow` (private for now).
+- Repo on the dev machine. GitHub: `LadonON/mcflow` (public since 2026-11-16).
 - Installed pipx 1.18.16 locally.
 - Built the Stage 1 package:
   - `mcflow init`
@@ -58,7 +58,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 ## Decisions
 
 - **Name:** **mcflow**. The distribution is **`mcflow-cli`** because `mcflow` is taken on PyPI. The command and the import package are both `mcflow`.
-- **No PyPI for now (user, 2026-11-16):** mcflow installs with `pipx install git+https://github.com/LadonON/mcflow.git` (pinned with `@v<version>` once releases are tagged). Releases are tagged GitHub releases (`release.yml`). This replaces the spec's `pipx install mcflow` and task 7.5's PyPI trusted publisher. While the repo is private, installing needs git credentials (`gh auth setup-git`).
+- **No PyPI for now (user, 2026-11-16):** mcflow installs with `pipx install git+https://github.com/LadonON/mcflow.git` (pinned with `@v<version>` once releases are tagged). Releases are tagged GitHub releases (`release.yml`). This replaces the spec's `pipx install mcflow` and task 7.5's PyPI trusted publisher.
 - **GitHub:** repos live on the personal account `LadonON`. Code is in `LadonON/mcflow`, and the knowledge base will be `LadonON/mcflow-knowledge`, which doesn't exist yet.
 - **License:** MIT. TokToken (AGPL-3.0) is only downloaded from its official releases and never bundled.
 - **Python:** 3.11 or later.
@@ -84,8 +84,8 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 - **Official-launcher installs get their own game folder (2026-11-14):** `.minecraft/mcflow/<version>/`, set as the launcher profile's gameDir. The first real install found about 100 Forge 1.19.2 mods in the user's `.minecraft/mods`, which must never be mixed with mcflow's Fabric install.
 
-- **Repo visibility (2026-11-14):** stays private until the first release, then goes public (user decision).
-- **Knowledge repo is public (user, 2026-11-16):** `LadonON/mcflow-knowledge` went public on 2026-11-16 so `main` could be protected (GitHub Free has no branch protection or rulesets on private repos). `main` requires a pull request and the `validate` check, for admins too. `LadonON/mcflow` itself stays private.
+- **Repo visibility (2026-11-14, updated 2026-11-16):** went public on 2026-11-16, before the first release, so GitHub Actions runs free (user decision). runtime-v0.1.0 was released and pinned the same day.
+- **Knowledge repo is public (user, 2026-11-16):** `LadonON/mcflow-knowledge` went public on 2026-11-16 so `main` could be protected (GitHub Free has no branch protection or rulesets on private repos). `main` requires a pull request and the `validate` check, for admins too.
 - **mcflow-server distribution (2026-11-14):** a tarball on the GitHub runtime release, run with `npx -y <pinned URL>`. No npm account.
 - **mcflow-server is checksum-checked (2026-11-16):** `npx` can't verify a download, so `.mcp.json` now runs `mcflow server mcp`. It downloads the pinned tarball once into mcflow's cache folder, keeps it only if its SHA-256 matches `versions.toml`, and runs it with `npx -y ./<file>` from that folder (a relative path, because cmd.exe mishandles `npx.cmd` with quoted arguments). The tarball carries `npm-shrinkwrap.json`, so every dependency is locked. mcflow-server reads its version from `package.json`, now 0.1.0.
 - **Runtime releases are separate from Python releases (2026-11-14):** `runtime-v*` tags build the mod and server and make a draft release. Their checksums are pinned into `versions.toml` before the Python package is released, so the package only installs files it has checksums for.
@@ -98,7 +98,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Menu layout approved (user, 2026-11-15):** `mcflow-demo/layouts/menu.layout.md`. A 160×168 panel whose top is 56 GUI px above the screen centre (pinned by the face object), a 2× name, a 3×2 tile grid, and support for GUI height 240 and up. Tiles send a chat placeholder for now; level and XP are vanilla experience.
 
 - **When an entry applies (task 6.2, 2026-11-16):** only to the Minecraft versions in its `minecraft_versions` (exact match, no ranges), and, when the entry has a `pack_format` and the caller passes the project's, only to the same pack format. Anything else is a lead for research. This keeps the "proven" promise: a technique proven on 1.21.11 is never assumed to work on 26.3.
-- **Entry validation is standard-library only (2026-11-16)**, so the shared repo's CI runs a copy of it without installing mcflow (which stays private until release). Required fields must be present, versions must be quoted release numbers, the date must be real and not in the future, the body non-empty and the file name kebab-case. Unknown fields only warn.
+- **Entry validation is standard-library only (2026-11-16)**, so the shared repo's CI runs a copy of it without installing mcflow. Required fields must be present, versions must be quoted release numbers, the date must be real and not in the future, the body non-empty and the file name kebab-case. Unknown fields only warn.
 - **Sync state (2026-11-16):** `.mcflow/kb.json` stores the hash of each entry as last seen on the shared default branch, and as last sent in a pull request. Pull uses it to tell "edited here" from "updated there": an entry changed on both sides is a conflict, left untouched, with the shared copy saved to `.mcflow/kb-conflicts/`. Push uses it to skip entries already in an open PR and entries that are merely behind.
 - **kb push never touches the default branch (2026-11-16):** it pushes a new `kb/<project>-<time>` branch (through a fork if the user can't push to the repo), then runs `gh pr create`. Git authenticates through `gh auth git-credential`, so no separate git login is needed.
 - **update's manifest (2026-11-16):** `init` writes `.mcflow/managed.json`, the hash of every managed file (`.claude/skills/`, `.claude/agents/`, `.ctags.d/`, CLAUDE.md, AGENTS.md, `.mcp.json`, `.toktoken.json`). `update` replaces a file only when it still matches that hash. Workspaces made before this have no manifest, so any difference counts as an edit. Hashes ignore CRLF versus LF.
@@ -145,5 +145,4 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Open questions
 
-
-- Should `LadonON/mcflow` stay private until the first release? Private repos use paid GitHub Actions minutes, and macOS runners count 10×.
+None right now.

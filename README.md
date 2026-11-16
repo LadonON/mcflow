@@ -11,12 +11,10 @@ New here? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). What wo
 You need Python 3.11 or newer and [pipx](https://pipx.pypa.io/).
 
 ```bash
-pipx install git+https://github.com/LadonON/mcflow.git
+pipx install git+https://github.com/LadonON/mcflow.git@v0.1.0
 ```
 
-That installs the newest code on `main`. Once releases are tagged, add the tag to pin one: `...mcflow.git@v0.1.0`. mcflow isn't on PyPI.
-
-While the repo is private, git needs your GitHub login to clone it. If `gh auth login` didn't already set that up, run `gh auth setup-git` once first.
+That installs the 0.1.0 release. Leave off `@v0.1.0` to get the newest code on `main` instead. mcflow isn't on PyPI.
 
 To update later, reinstall: `pipx install --force git+https://github.com/LadonON/mcflow.git` (with `@<tag>` for a release). pipx lists the package as `mcflow-cli`; the command you run is `mcflow`.
 
