@@ -52,5 +52,10 @@ def test_unpinned_runtime_is_refused(repo):
     assert any("1 Minecraft versions" in p for p in found)
 
 
-def test_the_real_repo_is_not_releasable_until_the_runtime_is_pinned():
-    assert check_release.problems("")  # today: runtime release not pinned yet
+def test_the_real_repo_reports_unpinned_runtime_exactly_when_it_is_unpinned():
+    import tomllib
+
+    pins = tomllib.loads((check_release.ROOT / "src/mcflow/versions.toml").read_text("utf-8"))
+    unpinned = not pins["mcflow_server"]["tarball_url"]
+    found = check_release.problems("")
+    assert any("mcflow-server isn't pinned" in p for p in found) == unpinned

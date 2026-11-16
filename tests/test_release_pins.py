@@ -58,7 +58,7 @@ def test_mcp_json_registers_released_server(tmp_path, monkeypatch):
     monkeypatch.setattr(scaffold, "pins", lambda: {**real, "mcflow_server": {"tarball_url": url}})
     scaffold.create(tmp_path, ProjectConfig("p", "26.3", 25, "LadonON/mcflow-knowledge"))
     servers = json.loads((tmp_path / ".mcp.json").read_text())["mcpServers"]
-    assert servers["mcflow"] == {"command": "npx", "args": ["-y", url]}
+    assert servers["mcflow"] == {"command": "mcflow", "args": ["server", "mcp"]}
 
 
 def test_vendored_humanizer_matches_its_pin():

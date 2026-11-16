@@ -64,11 +64,12 @@ def plan(config: ProjectConfig) -> list[PlannedFile]:
 
 
 def _mcp_json(template: str) -> bytes:
-    """Add mcflow-server once a released tarball is pinned; npx runs that exact file."""
+    """Add mcflow-server once a release is pinned. `mcflow server mcp` checks the tarball's
+    SHA-256 before running it (see mcflow.runtime); npx alone can't."""
     config = json.loads(template)
     server = pins().get("mcflow_server", {})
     if server.get("tarball_url"):
-        config["mcpServers"]["mcflow"] = {"command": "npx", "args": ["-y", server["tarball_url"]]}
+        config["mcpServers"]["mcflow"] = {"command": "mcflow", "args": ["server", "mcp"]}
     return (json.dumps(config, indent=2) + "\n").encode("utf-8")
 
 

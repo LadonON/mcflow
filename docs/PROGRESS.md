@@ -11,7 +11,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 ### 2026-11-14: setup and Stage 1
 
 - Copied the spec, created PROGRESS.md and TASKS.md, and collected the Stage 1 answers.
-- Repo at `C:\Users\Some One\mcflow`. GitHub: `LadonON/mcflow` (private for now).
+- Repo on the dev machine. GitHub: `LadonON/mcflow` (private for now).
 - Installed pipx 1.18.16 locally.
 - Built the Stage 1 package:
   - `mcflow init`
@@ -29,7 +29,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ### 2026-11-16: Stage 6
 
-- Fresh clone at `C:\Users\Some One\mcflow`.
+- Fresh clone on the dev machine.
 - Built `mcflow/knowledge/entry.py` (frontmatter parser, validator, version matching), `mcflow/knowledge/sync.py` (pull, push), `mcflow/manifest.py` and `mcflow/update.py`. New commands: `kb validate`, `kb list`, `kb pull`, `kb push` and `update`.
 - `knowledge-repo/` holds the shared repo's first files: README, `entries/`, `scripts/validate_entries.py` (an exact copy of `entry.py`, checked by a test) and the validation workflow.
 - 201 tests pass (66 new) and ruff is clean. The pull and push tests run real git against a local bare repo, with a fake `gh` for the pull request and fork calls. A manual run of `init`, `kb pull`, `kb list` and `update` against a local repo behaved as expected.
@@ -87,6 +87,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Repo visibility (2026-11-14):** stays private until the first release, then goes public (user decision).
 - **Knowledge repo is public (user, 2026-11-16):** `LadonON/mcflow-knowledge` went public on 2026-11-16 so `main` could be protected (GitHub Free has no branch protection or rulesets on private repos). `main` requires a pull request and the `validate` check, for admins too. `LadonON/mcflow` itself stays private.
 - **mcflow-server distribution (2026-11-14):** a tarball on the GitHub runtime release, run with `npx -y <pinned URL>`. No npm account.
+- **mcflow-server is checksum-checked (2026-11-16):** `npx` can't verify a download, so `.mcp.json` now runs `mcflow server mcp`. It downloads the pinned tarball once into mcflow's cache folder, keeps it only if its SHA-256 matches `versions.toml`, and runs it with `npx -y ./<file>` from that folder (a relative path, because cmd.exe mishandles `npx.cmd` with quoted arguments). The tarball carries `npm-shrinkwrap.json`, so every dependency is locked. mcflow-server reads its version from `package.json`, now 0.1.0.
 - **Runtime releases are separate from Python releases (2026-11-14):** `runtime-v*` tags build the mod and server and make a draft release. Their checksums are pinned into `versions.toml` before the Python package is released, so the package only installs files it has checksums for.
 - **Local mod builds configure two versions by default (2026-11-14):** Loom prepares Minecraft for every configured version on each Gradle run. Configuring all 31 filled the dev machine's disk, so CI builds the full range in slices of six.
 

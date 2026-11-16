@@ -22,7 +22,8 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { loadLocal, loadWorkspace, McflowError, type Workspace } from "./workspace.js";
 
-const VERSION = "0.1.0-dev.0";
+// package.json ships in the tarball next to dist/, so the version can't drift from it.
+const VERSION: string = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 
 // Loaded lazily: outside a workspace the server still starts, and each tool explains what's missing.
 let cached: { ws: Workspace; server: ServerController } | undefined;

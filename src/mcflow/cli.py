@@ -230,6 +230,23 @@ def server_setup(
         )
 
 
+@server_app.command("mcp")
+def server_mcp() -> None:
+    """Run mcflow-server for Claude Code (.mcp.json starts this). Checks the download first."""
+    from mcflow import runtime
+
+    root = find_project_root(Path.cwd())
+    if root is None:
+        err.print("[red]Not inside an mcflow workspace.[/] Claude Code starts this in the project.")
+        raise typer.Exit(1)
+    try:
+        code = runtime.run(root)
+    except (runtime.RuntimeMissing, OSError) as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    raise typer.Exit(code)
+
+
 @client_app.command("install")
 def client_install(
     path: Annotated[
