@@ -19,6 +19,21 @@ MOD_JAR = re.compile(r"^mcflow-client-(?P<mod>[\d.]+)\+(?P<mc>[\d.]+)\.jar$")
 SERVER_TGZ = re.compile(r"^mcflow-server-(?P<version>[\w.-]+)\.tgz$")
 
 
+def require_published(tag: str) -> None:
+    """Users download from the release URL, which only works once the draft is published."""
+    is_draft = subprocess.run(
+        ["gh", "release", "view", tag, "--repo", REPO, "--json", "isDraft", "--jq", ".isDraft"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if is_draft != "false":
+        raise SystemExit(
+            f"Release {tag} is still a draft: publish it on GitHub first, "
+            "or users' downloads of the pinned files will fail."
+        )
+
+
 def read_sums(tag: str) -> dict[str, str]:
     text = subprocess.run(
         [
@@ -91,6 +106,7 @@ def main() -> None:
     if len(sys.argv) != 2 or not sys.argv[1].startswith("runtime-v"):
         raise SystemExit(__doc__)
     tag = sys.argv[1]
+    require_published(tag)
     client, server = render(tag, read_sums(tag))
     text = VERSIONS.read_text(encoding="utf-8")
     text = replace_section(text, "client_mod", client)
