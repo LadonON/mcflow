@@ -22,7 +22,7 @@ The test server runs `online-mode=false`, so bots use `auth: "offline"` and any 
 1. **The resource-pack reply never arrives.** For packs with UUIDs (1.20.3+), mineflayer writes `resource_pack_receive` with `uuid` as a `uuid-1345` object, not a string. The server never sees the reply and holds the bot in the configuration phase forever (keep-alives only, no `finish_configuration`). **Workaround:** convert `uuid` to a string before writing.
 2. **Kicked for "Invalid move player packet" about a second after spawning.** Since 1.21.2 the server lets a client send one position packet per client tick, and the tick only ends when the client sends `tick_end` (`ServerGamePacketListenerImpl.handleClientTickEnd` resets `receivedPositionThisTick`; `handleMovePlayer` kicks on a second position before it). minecraft-data defines `tick_end` for 26.1 (play `0x0d`, no fields), but **mineflayer never sends it**. **Workaround:** send `tick_end` right after every movement packet (`position`, `position_look`, `look`, `flying`). mineflayer emits `physicsTick` *before* it sends the tick's position, so hooking that event would be in the wrong order.
 
-Both workarounds live in one wrapper around `bot._client.write`. They should be reported upstream.
+Both workarounds live in one wrapper around `bot._client.write`. Nothing was reported upstream: on 2026-11-16 the user decided there were no mineflayer bugs to report (task 4.1b).
 
 ## Results with the workarounds (`bot-probe.mjs`, 2026-11-15)
 

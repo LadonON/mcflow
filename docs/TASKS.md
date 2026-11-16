@@ -73,7 +73,8 @@ Labels: **[you]** is a task the user has to do. **[research]** means check the c
 - [x] 1.33 Manual test on Windows: `pipx install .`, `mcflow init` in a temporary folder, then `mcflow doctor`
 - [x] 1.34 Write a README for each component (package, doctor, templates)
 - [x] 1.35 Update PROGRESS.md
-- [ ] 1.36 **Checkpoint:** show the results and wait for the go-ahead
+- [x] 1.36 **Checkpoint:** show the results and wait for the go-ahead
+  - Go-ahead confirmed by the user 2026-11-16 (recorded after the fact; later stages had already gone ahead)
 
 ## Stage 2: `mcflow-server` server control and the real-client prototype
 
@@ -111,7 +112,8 @@ Labels: **[you]** is a task the user has to do. **[research]** means check the c
 - [x] 2.24a Clean screenshots: toasts cleared before capture, tutorial and first-join notices off, `client_join` sets 1280×720. Verified live 2026-11-14 on 26.3
 - [x] 2.25 Per-OS limits written in `client-mod/README.md` (Windows verified; macOS and Linux not yet tested; headless Linux not supported yet)
 - [x] 2.26 The mod builds for all 31 supported versions (1.17 to 26.3) in CI. Only 26.3 has been run in a real game; the others compile against their real APIs. In-game testing of older versions belongs in Stage 7's cross-platform and version testing
-- [ ] 2.27 **Checkpoint:** show the results and wait for the go-ahead
+- [x] 2.27 **Checkpoint:** show the results and wait for the go-ahead
+  - Go-ahead confirmed by the user 2026-11-16 (recorded after the fact; later stages had already gone ahead)
 
 ## Stage 3: Vertical slice: a command-opened on-screen UI (section 11, end to end)
 
@@ -163,7 +165,8 @@ All art and code are **original**. The reference image and the listing guide the
   - Done 2026-11-15: `docs/research/Stage 4 Bots.md`. mineflayer 4.39.0 tops out at 26.1, so bots join the 26.3 server through **ViaBackwards 5.12.2** (installed with the user's OK, hash checked). Two mineflayer bugs needed workarounds: the resource-pack reply's UUID, and the missing `tick_end` packet. With both, a probe passed 10/10 (join, chat, look, walk, /menu, sneak closing it, five bots at once)
 - [x] 4.1a `mcflow server setup` installs ViaBackwards (pinned SHA-256) when the server is newer than mineflayer supports; `doctor` reports it
   - Done 2026-11-15: `versions.toml` pins ViaBackwards 5.12.2 and records mineflayer's newest version (`[bots]`); setup installs it only when needed, and `doctor`'s new "Test bots" check says how bots join (ok on the demo: 26.1 through ViaBackwards). 3 new tests
-- [ ] 4.1b **[you]** Approve reporting the two mineflayer bugs upstream (the UUID in the resource-pack reply, and the missing `tick_end`). Nothing is posted without approval
+- [x] 4.1b **[you]** Approve reporting the two mineflayer bugs upstream (the UUID in the resource-pack reply, and the missing `tick_end`). Nothing is posted without approval
+  - Closed 2026-11-16 (user): nothing is reported upstream; the user's call is that no bugs were found in mineflayer. The two workarounds in `mcp-server/src/bots.ts` stay
 - [x] 4.2 `bot_join`, `bot_leave`, `bot_chat`, `bot_move`, `bot_look`, `bot_use_item`, `bot_inventory`, `bot_click_window_slot`, `bot_status`
   - Done 2026-11-15: `mcp-server/src/bots.ts` plus the nine tools in `src/index.ts`. 49 unit tests pass (15 new), and a live run through the MCP server passed 30/30 (details in `docs/research/Stage 4 Bots.md`). Bots join the 26.3 server as 26.1 through ViaBackwards, with both mineflayer workarounds. `MCFLOW_BOT_TRACE=1` logs packets. Inside spawn protection, non-operator bots can't use blocks, and the tool says so
 - [x] 4.3 `bot_swarm(count, behavior)`, with defined behaviors (idle, wander, use-feature, join-leave loop)
@@ -220,7 +223,8 @@ All art and code are **original**. The reference image and the listing guide the
 - [ ] 5.16a **[you]** Decide whether to propose a TokToken change upstream (a configurable source-extension list, or honouring ctags' `--list-maps`) so pack JSON, `.mcmeta`, GLSL and YAML reach its index. Nothing is filed without approval
 - [x] 5.17 Ship the optlib definitions inside the mcflow package, with tests
   - Done 2026-11-15: `templates/project/.ctags.d/` (`minecraft-glsl.ctags`, `minecraft-json.ctags`, `yaml-keys.ctags`), used by `mcflow tags`. 6 tests, including real ctags runs on a shader, `.mcmeta`, a font and a config
-- [ ] 5.18 **Checkpoint:** show the results and wait for the go-ahead
+- [x] 5.18 **Checkpoint:** show the results and wait for the go-ahead
+  - Go-ahead confirmed by the user 2026-11-16 (recorded after the fact; later stages had already gone ahead)
 
 ## Stage 6: Knowledge base, cloud sync, `update`
 
