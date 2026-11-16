@@ -230,6 +230,23 @@ def server_setup(
         )
 
 
+@server_app.command("mcp")
+def server_mcp() -> None:
+    """Run mcflow-server for Claude Code (.mcp.json starts this). Checks the download first."""
+    from mcflow import runtime
+
+    root = find_project_root(Path.cwd())
+    if root is None:
+        err.print("[red]Not inside an mcflow workspace.[/] Claude Code starts this in the project.")
+        raise typer.Exit(1)
+    try:
+        code = runtime.run(root)
+    except (runtime.RuntimeMissing, OSError) as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    raise typer.Exit(code)
+
+
 @client_app.command("install")
 def client_install(
     path: Annotated[
@@ -390,24 +407,197 @@ def tools_install(
         console.print(f"[yellow]{note}[/]")
 
 
-def _not_yet(command: str, stage: str) -> None:
-    err.print(f"`mcflow {command}` isn't available yet. It's planned for {stage}.")
-    raise typer.Exit(3)
-
-
 @app.command()
-def update() -> None:
-    """Update skills, agents and the knowledge base without touching your project files."""
-    _not_yet("update", "a later release (Stage 6)")
+def update(
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="Show what would change; write nothing.")
+    ] = False,
+    take: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--take", help="Replace this file you edited with mcflow's new version (repeatable)."
+        ),
+    ] = None,
+    kb: Annotated[
+        bool, typer.Option("--kb/--no-kb", help="Also pull approved knowledge-base entries.")
+    ] = True,
+) -> None:
+    """Update skills, agents and workflow files, then the knowledge base. Your files stay put.
+
+    Files you've edited are never overwritten: the diff to the new version is shown instead.
+    To get a newer mcflow first: pipx install --force git+https://github.com/LadonON/mcflow.git
+    """
+    from mcflow import update as updater
+
+    root, config = _require_project()
+    result = updater.run(root, config, set(take or []), dry_run=dry_run)
+    prefix = "Would " if dry_run else ""
+    for label, items in (
+        ("add", result.added),
+        ("update", result.updated),
+        ("replace (--take)", result.taken),
+        ("remove (no longer shipped)", result.removed),
+    ):
+        for path in items:
+            text = prefix + label if dry_run else label.capitalize()
+            console.print(f"[green]{text}[/] {path}")
+    for e in result.edited:
+        console.print(
+            f"\n[yellow]You've edited {e.path}; left as it is.[/] The new version differs:"
+        )
+        console.print(e.diff, markup=False, highlight=False)
+        console.print(f"To take the new version: mcflow update --take {e.path}")
+    for path in result.deleted_by_user:
+        console.print(f"Left deleted: {path} (you removed it; --take {path} brings it back)")
+    for path in result.kept_removed:
+        console.print(f"[yellow]Kept {path}[/]: mcflow no longer ships it, but you've edited it.")
+    console.print(
+        f"\n{result.changes} change(s), {len(result.unchanged)} up to date, "
+        f"{len(result.edited)} edited by you."
+    )
+    if kb and not dry_run:
+        console.print("")
+        kb_pull()
+
+
+def _print_pull(result) -> None:
+    for name in result.added:
+        console.print(f"[green]Added[/] knowledge/{name}")
+    for name in result.updated:
+        console.print(f"[green]Updated[/] knowledge/{name}")
+    for name in result.kept_local:
+        console.print(f"Kept your edit: knowledge/{name} (share it with `mcflow kb push`)")
+    for name, saved in result.conflicts:
+        console.print(
+            f"[yellow]Conflict:[/] knowledge/{name} changed here and in the shared repo. "
+            f"Yours is untouched; the shared version is at {saved}. Merge them by hand."
+        )
+    for name in result.deleted_here:
+        console.print(f"Left deleted: knowledge/{name} (you removed it)")
+    for name in result.removed_upstream:
+        console.print(f"[yellow]knowledge/{name} was removed from the shared repo[/]; kept here.")
+    for name, errors in result.invalid_upstream:
+        console.print(f"[red]Skipped invalid shared entry {name}:[/] {'; '.join(errors)}")
+    console.print(
+        f"{len(result.added)} added, {len(result.updated)} updated, "
+        f"{len(result.conflicts)} conflicts, {len(result.unchanged)} already up to date."
+    )
 
 
 @kb_app.command("pull")
 def kb_pull() -> None:
     """Merge approved entries from the shared knowledge base into knowledge/."""
-    _not_yet("kb pull", "a later release (Stage 6)")
+    from mcflow.knowledge import sync
+
+    root, config = _require_project()
+    try:
+        result = sync.pull(root, config.knowledge_repo)
+    except sync.KbError as e:
+        err.print(f"[red]Couldn't pull the knowledge base ({config.knowledge_repo}).[/] {e}")
+        raise typer.Exit(1) from None
+    _print_pull(result)
+    if result.conflicts:
+        raise typer.Exit(1)
 
 
 @kb_app.command("push")
-def kb_push() -> None:
-    """Open a pull request that shares your new knowledge entries."""
-    _not_yet("kb push", "a later release (Stage 6)")
+def kb_push(
+    names: Annotated[
+        list[str] | None,
+        typer.Argument(help="Entries to share (default: every new or changed one)."),
+    ] = None,
+    yes: Annotated[
+        bool,
+        typer.Option(
+            "--yes", help="Open the pull request without asking. Only after the user has said yes."
+        ),
+    ] = False,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run", help="List what would be proposed; open nothing.")
+    ] = False,
+) -> None:
+    """Open a pull request that shares your new knowledge entries. Never pushes directly."""
+    from mcflow.knowledge import sync
+
+    root, config = _require_project()
+    url, slug = sync.resolve_remote(config.knowledge_repo)
+    if slug is None:
+        err.print(f"[red]kb push needs a GitHub repo (owner/name); mcflow.toml has {url}.[/]")
+        raise typer.Exit(1)
+
+    def confirm(plan: sync.PushPlan) -> bool:
+        for name in plan.new:
+            console.print(f"  new      knowledge/{name}")
+        for name in plan.changed:
+            console.print(f"  updated  knowledge/{name}")
+        if dry_run:
+            return False
+        return yes or typer.confirm(f"Open a pull request on {slug} with these entries?")
+
+    try:
+        result = sync.push(root, url, slug, config.name, names or None, confirm=confirm)
+    except sync.KbError as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    plan = result.plan
+    for name in plan.already_proposed:
+        console.print(f"Already in an open pull request: knowledge/{name}")
+    for name in plan.behind:
+        console.print(
+            f"[yellow]knowledge/{name} is older than the shared copy.[/] Run `mcflow kb pull`."
+        )
+    if result.url:
+        console.print(f"[green]Pull request opened:[/] {result.url}")
+        console.print("A reviewer merges it; then `mcflow kb pull` on every install picks it up.")
+    elif not plan.to_send:
+        console.print("Nothing new to share.")
+    elif dry_run:
+        console.print("Dry run: nothing was sent.")
+    else:
+        console.print("Cancelled: nothing was sent.")
+
+
+@kb_app.command("validate")
+def kb_validate(
+    paths: Annotated[
+        list[Path] | None, typer.Argument(help="Entry files or folders (default: knowledge/).")
+    ] = None,
+) -> None:
+    """Check each entry's frontmatter (title, versions, proof, sources, date). Exits 1 on errors."""
+    from mcflow.knowledge import entry
+
+    if not paths:
+        root, _ = _require_project()
+        paths = [root / "knowledge"]
+    raise typer.Exit(entry.main([str(p) for p in paths]))
+
+
+@kb_app.command("list")
+def kb_list(
+    pack_format: Annotated[
+        int | None,
+        typer.Option(help="This version's resource-pack format, read from the server jar."),
+    ] = None,
+    version: Annotated[
+        str | None,
+        typer.Option(help="Match against this Minecraft version instead of the project's."),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Machine-readable output")] = False,
+) -> None:
+    """List entries and whether each one applies to this project's version and pack format."""
+    from mcflow.knowledge import entry
+
+    root, config = _require_project()
+    target = version or config.paper_version
+    rows = []
+    for path in entry.entry_files(root / "knowledge"):
+        e = entry.load(path)
+        m = entry.applies(e, target, pack_format)
+        rows.append({"file": path.name, "title": e.title, "applies": m.applies, "reason": m.reason})
+    if as_json:
+        print(json.dumps(rows, indent=2))
+        return
+    for r in rows:
+        mark = "[green]applies[/]" if r["applies"] else "[yellow]lead only[/]"
+        console.print(f"{mark}  {r['file']}  {r['title']} ({r['reason']})")
+    console.print(f"{sum(r['applies'] for r in rows)} of {len(rows)} entries apply to {target}.")

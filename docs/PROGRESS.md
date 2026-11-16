@@ -4,14 +4,14 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 2: done, and waiting for the user's go-ahead at the checkpoint.** The final live run (2026-11-14 15:03) produced clean 1280×720 screenshots, and each `client_run` returned its server log lines. Server control, the client tools and the Fabric mod are built. The mod is live-tested on 26.3 and compiles for all 31 versions from 1.17 to 26.3. The runtime release pipeline has passed a dry run. Stage 3 doesn't start until the user says so.
+**Stage 7: in progress (2026-11-16).** Built: cross-platform integration CI (passes 13/13 locally on Windows, not yet run on GitHub), the doctor Platform check and `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, and a GitHub release workflow with release checks. Waiting on: CI on PR #1, a pinned runtime release and a public repo (7.5b), then approval to tag and publish (7.6).
 
 ## Session log
 
 ### 2026-11-14: setup and Stage 1
 
 - Copied the spec, created PROGRESS.md and TASKS.md, and collected the Stage 1 answers.
-- Repo at `C:\Users\Some One\mcflow`. GitHub: `LadonON/mcflow` (private for now).
+- Repo on the dev machine. GitHub: `LadonON/mcflow` (private for now).
 - Installed pipx 1.18.16 locally.
 - Built the Stage 1 package:
   - `mcflow init`
@@ -26,6 +26,19 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - Manual test: built the wheel, installed it with `pipx install <wheel>`, ran `mcflow init` with Paper 1.21.11, then `mcflow doctor`. The result was correct.
 - CI: the first run failed on Ubuntu because Rich hard-wrapped a message that contained a long temp path. Both CLI consoles now use `soft_wrap`. After that, all 9 jobs passed: tests on Windows, macOS and Ubuntu with Python 3.11 and 3.13, plus the pipx smoke test on each OS.
 - Research for this stage: [research/Stage 1 Toolchain and Version Pins.md](research/Stage%201%20Toolchain%20and%20Version%20Pins.md).
+
+### 2026-11-16: Stage 6
+
+- Fresh clone on the dev machine.
+- Built `mcflow/knowledge/entry.py` (frontmatter parser, validator, version matching), `mcflow/knowledge/sync.py` (pull, push), `mcflow/manifest.py` and `mcflow/update.py`. New commands: `kb validate`, `kb list`, `kb pull`, `kb push` and `update`.
+- `knowledge-repo/` holds the shared repo's first files: README, `entries/`, `scripts/validate_entries.py` (an exact copy of `entry.py`, checked by a test) and the validation workflow.
+- 201 tests pass (66 new) and ruff is clean. The pull and push tests run real git against a local bare repo, with a fake `gh` for the pull request and fork calls. A manual run of `init`, `kb pull`, `kb list` and `update` against a local repo behaved as expected.
+
+### 2026-11-16: Stage 7
+
+- The last CI run on `main` (Stage 5) had failed: the real-ctags tests ran against macOS's BSD ctags and the Windows runner's Exuberant Ctags (they only checked that some `ctags` existed), and the pipx smoke test looked for `.claude/skills/.gitkeep`, which the template no longer has. Fixed both; `mcflow tags` now refuses a non-universal ctags with a clear message, and CI installs universal-ctags on every runner.
+- Integration job per OS, and `mcp-server/scripts/integration.mjs`. Locally on Windows (Java 21, Node 24, Paper 1.21.11 build 132, its SHA-256 matching PaperMC's): 13/13 checks.
+- Added the doctor Platform check, `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, `release-pypi.yml` (replaced the same day by `release.yml`, see Decisions) and `scripts/check_release.py`. 214 tests pass.
 
 ## Environment (this dev machine, 2026-11-14)
 
@@ -44,7 +57,8 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Decisions
 
-- **Name:** **mcflow**, published on PyPI as **`mcflow-cli`** because `mcflow` is taken there. The command and the import package are both `mcflow`.
+- **Name:** **mcflow**. The distribution is **`mcflow-cli`** because `mcflow` is taken on PyPI. The command and the import package are both `mcflow`.
+- **No PyPI for now (user, 2026-11-16):** mcflow installs with `pipx install git+https://github.com/LadonON/mcflow.git` (pinned with `@v<version>` once releases are tagged). Releases are tagged GitHub releases (`release.yml`). This replaces the spec's `pipx install mcflow` and task 7.5's PyPI trusted publisher. While the repo is private, installing needs git credentials (`gh auth setup-git`).
 - **GitHub:** repos live on the personal account `LadonON`. Code is in `LadonON/mcflow`, and the knowledge base will be `LadonON/mcflow-knowledge`, which doesn't exist yet.
 - **License:** MIT. TokToken (AGPL-3.0) is only downloaded from its official releases and never bundled.
 - **Python:** 3.11 or later.
@@ -71,7 +85,9 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Official-launcher installs get their own game folder (2026-11-14):** `.minecraft/mcflow/<version>/`, set as the launcher profile's gameDir. The first real install found about 100 Forge 1.19.2 mods in the user's `.minecraft/mods`, which must never be mixed with mcflow's Fabric install.
 
 - **Repo visibility (2026-11-14):** stays private until the first release, then goes public (user decision).
+- **Knowledge repo is public (user, 2026-11-16):** `LadonON/mcflow-knowledge` went public on 2026-11-16 so `main` could be protected (GitHub Free has no branch protection or rulesets on private repos). `main` requires a pull request and the `validate` check, for admins too. `LadonON/mcflow` itself stays private.
 - **mcflow-server distribution (2026-11-14):** a tarball on the GitHub runtime release, run with `npx -y <pinned URL>`. No npm account.
+- **mcflow-server is checksum-checked (2026-11-16):** `npx` can't verify a download, so `.mcp.json` now runs `mcflow server mcp`. It downloads the pinned tarball once into mcflow's cache folder, keeps it only if its SHA-256 matches `versions.toml`, and runs it with `npx -y ./<file>` from that folder (a relative path, because cmd.exe mishandles `npx.cmd` with quoted arguments). The tarball carries `npm-shrinkwrap.json`, so every dependency is locked. mcflow-server reads its version from `package.json`, now 0.1.0.
 - **Runtime releases are separate from Python releases (2026-11-14):** `runtime-v*` tags build the mod and server and make a draft release. Their checksums are pinned into `versions.toml` before the Python package is released, so the package only installs files it has checksums for.
 - **Local mod builds configure two versions by default (2026-11-14):** Loom prepares Minecraft for every configured version on each Gradle run. Configuring all 31 filled the dev machine's disk, so CI builds the full range in slices of six.
 
@@ -80,6 +96,12 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Stage 3 rendering (user, 2026-11-15):** option A, a font-glyph HUD in the title with a cursor driven by head rotation. The spike works in the real 26.3 client (see `docs/research/Stage 3 On-screen UI.md`).
 - **Menu input (user, 2026-11-15):** while the menu is open the player is in spectator mode (hides the hand and hotbar), and left clicks are read by a Netty packet hook, because Paper fires no event for spectator clicks. This relies on Paper internals; Space is the fallback. Locking the camera onto an entity was ruled out because the client then stops sending its view direction.
 - **Menu layout approved (user, 2026-11-15):** `mcflow-demo/layouts/menu.layout.md`. A 160×168 panel whose top is 56 GUI px above the screen centre (pinned by the face object), a 2× name, a 3×2 tile grid, and support for GUI height 240 and up. Tiles send a chat placeholder for now; level and XP are vanilla experience.
+
+- **When an entry applies (task 6.2, 2026-11-16):** only to the Minecraft versions in its `minecraft_versions` (exact match, no ranges), and, when the entry has a `pack_format` and the caller passes the project's, only to the same pack format. Anything else is a lead for research. This keeps the "proven" promise: a technique proven on 1.21.11 is never assumed to work on 26.3.
+- **Entry validation is standard-library only (2026-11-16)**, so the shared repo's CI runs a copy of it without installing mcflow (which stays private until release). Required fields must be present, versions must be quoted release numbers, the date must be real and not in the future, the body non-empty and the file name kebab-case. Unknown fields only warn.
+- **Sync state (2026-11-16):** `.mcflow/kb.json` stores the hash of each entry as last seen on the shared default branch, and as last sent in a pull request. Pull uses it to tell "edited here" from "updated there": an entry changed on both sides is a conflict, left untouched, with the shared copy saved to `.mcflow/kb-conflicts/`. Push uses it to skip entries already in an open PR and entries that are merely behind.
+- **kb push never touches the default branch (2026-11-16):** it pushes a new `kb/<project>-<time>` branch (through a fork if the user can't push to the repo), then runs `gh pr create`. Git authenticates through `gh auth git-credential`, so no separate git login is needed.
+- **update's manifest (2026-11-16):** `init` writes `.mcflow/managed.json`, the hash of every managed file (`.claude/skills/`, `.claude/agents/`, `.ctags.d/`, CLAUDE.md, AGENTS.md, `.mcp.json`, `.toktoken.json`). `update` replaces a file only when it still matches that hash. Workspaces made before this have no manifest, so any difference counts as an edit. Hashes ignore CRLF versus LF.
 
 ## Findings
 

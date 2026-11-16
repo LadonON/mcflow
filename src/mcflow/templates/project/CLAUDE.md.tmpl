@@ -42,16 +42,16 @@ The client mod only joins servers on this computer and only acts while it's conn
 
 Do every development task in this order. Don't skip, merge or reorder steps.
 
-1. **Knowledge, then research.** Check `knowledge/` for every API, file format and resource-pack feature you'll touch (the **knowledge** skill). If there's no entry, or the entry doesn't cover Paper ${paper_version} and its pack format, run the **research** skill first.
+1. **Knowledge, then research.** Check `knowledge/` for every API, file format and resource-pack feature you'll touch (the **knowledge** skill; `mcflow kb list` says which entries apply). If there's no entry, or the entry doesn't cover Paper ${paper_version} and its pack format, run the **research** skill first.
 2. **Plan.** For anything a player sees (inventories, GUIs, HUD and font glyphs, scoreboards, boss bars, chat formatting), run the **ui-layout** flow and get the layout approved before writing code.
 3. **Implement.** Follow the **paper-plugin** and **resource-packs** skills.
 4. **Verify.** The **verify** skill: build, unit tests, resource-pack gate, deploy, logs, in-game checks with the verifier agents, then the performance, memory and thread-safety gates.
 5. **Humanize.** `mcflow humanize snapshot <project>`, then the **code-humanizer** skill on the code changed in this task only, then `mcflow humanize check <project>`. Revert any edit the check rejects.
 6. **Re-verify.** Rebuild, rerun the tests and do a quick in-game check. Humanizing must not change behaviour.
 7. **Re-index.** The **indexer** agent re-indexes with TokToken.
-8. **Record.** Write anything you learned and proved to `knowledge/`.
+8. **Record.** Write anything you learned and proved to `knowledge/`, then run `mcflow kb validate`.
 9. **Present.** Only now show the change to the user, with screenshots, test results and tick times (idle, under load, against the baseline).
-10. **Offer to share.** Ask whether to upload the new knowledge entries. If they say yes, run `mcflow kb push`, which opens a pull request for human review.
+10. **Offer to share.** Ask whether to upload the new knowledge entries. If they say yes, run `mcflow kb push --yes`, which opens a pull request for human review. Never run it without their yes.
 
 Never present work as finished if it's unverified, un-humanized or un-indexed. If a step fails, fix it and restart from step 4. If a step can't run (no client, no TokToken), say which and why; never skip one silently.
 

@@ -208,3 +208,23 @@ def test_every_failure_comes_with_a_fix(make_env):
             result = check(env, ctx())
             if result.status is Status.FAIL:
                 assert result.fix, f"{result.name} on {os_name} failed without a fix"
+
+
+@pytest.mark.parametrize(
+    ("os_name", "machine", "status", "text"),
+    [
+        ("windows", "x86_64", checks.Status.OK, "tested in CI"),
+        ("macos", "aarch64", checks.Status.OK, "tested in CI"),
+        ("linux", "aarch64", checks.Status.OK, "not tested in CI"),
+        ("windows", "aarch64", checks.Status.WARN, "no code indexing"),
+        ("linux", "riscv64", checks.Status.WARN, "no code indexing"),
+    ],
+)
+def test_platform_check_names_the_limits(make_env, os_name, machine, status, text):
+    result = checks.check_platform(make_env(os_name, machine), checks.DoctorContext(paper=None))
+    assert result.status is status
+    assert text in result.summary
+
+
+def test_windows_arm_mentions_ctags_emulation():
+    assert any("x64 emulation" in limit for limit in checks.platform_limits("windows", "aarch64"))

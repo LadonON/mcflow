@@ -4,6 +4,9 @@ import platform
 import sys
 
 OS_NAMES = ("windows", "macos", "linux")
+# The runners GitHub Actions CI tests on (macos-latest is Apple Silicon). Keep in step with ci.yml.
+CI_TESTED = {"windows-x86_64", "macos-aarch64", "linux-x86_64"}
+LABELS = {"windows": "Windows", "macos": "macOS", "linux": "Linux"}
 
 
 def current_os() -> str:

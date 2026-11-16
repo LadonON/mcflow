@@ -67,8 +67,48 @@ def test_doctor_rejects_old_version(monkeypatch, tmp_path):
     assert result.exit_code == 2
 
 
-def test_unbuilt_commands_say_when_they_arrive():
-    for args in (["update"], ["kb", "pull"], ["kb", "push"]):
-        result = runner.invoke(app, args)
-        assert result.exit_code == 3
-        assert "Stage 6" in result.output
+def _workspace(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert runner.invoke(app, ["init", ".", "-p", "1.21.11", "--offline"]).exit_code == 0
+
+
+ENTRY = """---
+title: "A"
+minecraft_versions: ["1.21.11"]
+paper_api_version: "1.21"
+verified_by: "T"
+sources: ["https://docs.papermc.io/"]
+date: 2026-11-15
+---
+
+Body
+"""
+
+
+def test_kb_validate_and_list(tmp_path, monkeypatch):
+    _workspace(tmp_path, monkeypatch)
+    (tmp_path / "knowledge" / "a.md").write_text(ENTRY, encoding="utf-8")
+    (tmp_path / "knowledge" / "b.md").write_text(ENTRY.replace('"1.21.11"', '"26.3"'), "utf-8")
+    assert runner.invoke(app, ["kb", "validate"]).exit_code == 0
+    listed = json.loads(runner.invoke(app, ["kb", "list", "--json"]).output)
+    assert [(r["file"], r["applies"]) for r in listed] == [("a.md", True), ("b.md", False)]
+    (tmp_path / "knowledge" / "c.md").write_text("broken", encoding="utf-8")
+    result = runner.invoke(app, ["kb", "validate"])
+    assert result.exit_code == 1 and "c.md: error" in result.output
+
+
+def test_update_in_a_fresh_workspace_changes_nothing(tmp_path, monkeypatch):
+    _workspace(tmp_path, monkeypatch)
+    result = runner.invoke(app, ["update", "--no-kb"])
+    assert result.exit_code == 0, result.output
+    assert "0 change(s)" in result.output
+
+
+def test_kb_push_needs_a_github_repo(tmp_path, monkeypatch):
+    _workspace(tmp_path, monkeypatch)
+    toml = tmp_path / "mcflow.toml"
+    toml.write_text(
+        toml.read_text(encoding="utf-8").replace("LadonON/mcflow-knowledge", "/a/path"), "utf-8"
+    )
+    result = runner.invoke(app, ["kb", "push", "--dry-run"])
+    assert result.exit_code == 1 and "GitHub repo" in result.output

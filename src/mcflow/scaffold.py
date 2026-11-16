@@ -12,6 +12,7 @@ from importlib.resources.abc import Traversable
 from pathlib import Path, PurePosixPath
 from string import Template
 
+from mcflow import manifest
 from mcflow.project import CONFIG_NAME, ProjectConfig
 from mcflow.versions import pins
 
@@ -63,11 +64,12 @@ def plan(config: ProjectConfig) -> list[PlannedFile]:
 
 
 def _mcp_json(template: str) -> bytes:
-    """Add mcflow-server once a released tarball is pinned; npx runs that exact file."""
+    """Add mcflow-server once a release is pinned. `mcflow server mcp` checks the tarball's
+    SHA-256 before running it (see mcflow.runtime); npx alone can't."""
     config = json.loads(template)
     server = pins().get("mcflow_server", {})
     if server.get("tarball_url"):
-        config["mcpServers"]["mcflow"] = {"command": "npx", "args": ["-y", server["tarball_url"]]}
+        config["mcpServers"]["mcflow"] = {"command": "mcflow", "args": ["server", "mcp"]}
     return (json.dumps(config, indent=2) + "\n").encode("utf-8")
 
 
@@ -81,4 +83,12 @@ def create(root: Path, config: ProjectConfig) -> list[PlannedFile]:
         target = root / f.path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(f.content)
+    manifest.save(
+        root,
+        {
+            f.path.as_posix(): manifest.digest(f.content)
+            for f in planned
+            if manifest.is_managed(f.path)
+        },
+    )
     return planned

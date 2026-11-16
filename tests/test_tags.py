@@ -1,5 +1,4 @@
 import json
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -29,6 +28,14 @@ FONT = """{
 """
 MCMETA = '{"pack": {"description": "demo", "min_format": 97, "max_format": 97}}\n'
 CONFIG = 'menu:\n  title: "Shop"\n  rows: 3\nmessages:\n  opened: "Opened"\n'
+
+
+def universal_ctags() -> bool:
+    try:
+        tags.find_ctags()
+    except tags.TagsError:
+        return False
+    return True
 
 
 def workspace(tmp_path: Path) -> Path:
@@ -99,7 +106,7 @@ def test_reports_ctags_failures(tmp_path, monkeypatch):
         tags.run(root, [], runner=broken)
 
 
-@pytest.mark.skipif(shutil.which("ctags") is None, reason="universal-ctags not installed")
+@pytest.mark.skipif(not universal_ctags(), reason="universal-ctags not installed")
 def test_real_ctags_reads_shaders_mcmeta_json_and_yaml(tmp_path):
     root = workspace(tmp_path)
     found = {(t.name, t.kind) for t in tags.run(root, [])}
@@ -116,9 +123,31 @@ def test_real_ctags_reads_shaders_mcmeta_json_and_yaml(tmp_path):
     assert not any(name.isdigit() for name, _ in found)
 
 
-@pytest.mark.skipif(shutil.which("ctags") is None, reason="universal-ctags not installed")
+@pytest.mark.skipif(not universal_ctags(), reason="universal-ctags not installed")
 def test_real_ctags_query_matches_names_and_scopes(tmp_path):
     root = workspace(tmp_path)
     hits = tags.run(root, ["resourcepacks"], query="providers")
     assert hits and all("providers" in (t.name + (t.scope or "")) for t in hits)
     assert all(t.path.startswith("resourcepacks/") for t in hits)
+
+
+@pytest.mark.parametrize(
+    ("output", "ok"),
+    [
+        ("Universal Ctags 6.2.0, Copyright (C) 2015-2025 Universal Ctags Team", True),
+        ("Exuberant Ctags 5.8, Copyright (C) 1996-2009 Darren Hiebert", False),
+        ("ctags: illegal option -- -\nusage: ctags [-BFadtuwvx] file ...", False),
+    ],
+)
+def test_find_ctags_accepts_only_universal_ctags(monkeypatch, output, ok):
+    monkeypatch.setattr(tags.shutil, "which", lambda name: "/usr/bin/ctags")
+    monkeypatch.setattr(
+        tags.subprocess,
+        "run",
+        lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0 if ok else 1, output, ""),
+    )
+    if ok:
+        assert tags.find_ctags() == "/usr/bin/ctags"
+    else:
+        with pytest.raises(tags.TagsError, match="isn't universal-ctags"):
+            tags.find_ctags()

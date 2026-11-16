@@ -10,7 +10,7 @@ description: Read and write the workspace's knowledge base (knowledge/*.md, prov
 ## Look up (before using something)
 
 1. Search `knowledge/` for the API, format or feature: file names, titles, and the body text.
-2. An entry **applies** only if:
+2. Run `mcflow kb list --pack-format <N>` (N is this version's pack format, read from the server jar; leave it out for plugin-only work). It marks each entry `applies` or `lead only`, by this rule. An entry **applies** only if:
    - `minecraft_versions` includes this project's Paper version (from `mcflow.toml`), and
    - for resource-pack techniques, `pack_format` matches this version's pack format.
    An entry for another version is a lead, not an answer.
@@ -42,7 +42,14 @@ date: <YYYY-MM-DD>
 - One technique per file, named after it (`font-glyph-title-ui.md`).
 - Proven on another version later? Add the version to `minecraft_versions` and the new proof to `verified_by`. Don't create a duplicate.
 - An entry turns out wrong on a version? Fix it, or narrow `minecraft_versions`, in the same task.
+- Run `mcflow kb validate` after writing or editing entries. It checks every field, the date and the file name; fix every error it reports.
 
 ## Share
 
-At the end of a task with new or updated entries, ask the user whether to share them. Only with their yes, run `mcflow kb push`, which opens a **pull request** on the shared knowledge base for a human to review. It never pushes directly. `mcflow kb pull` brings in approved entries from others.
+At the end of a task with new or updated entries, ask the user whether to share them.
+
+- `mcflow kb push --dry-run` lists what would be proposed. Show the user that list when you ask.
+- Only with their yes, run `mcflow kb push --yes` (or name entries: `mcflow kb push font-glyph-title-ui --yes`). It validates the entries, then opens a **pull request** on the shared knowledge base from a new `kb/...` branch (through a fork if they can't push there) for a human to review. It never pushes to the default branch. Give the user the pull request link it prints.
+- Entries already in an open pull request aren't proposed again. An entry that's older than the shared copy needs `mcflow kb pull` first.
+
+`mcflow kb pull` (and `mcflow update`) bring in approved entries from others. They never overwrite an entry edited here: a clash is reported, and the shared version is saved under `.mcflow/kb-conflicts/`. Merge the two by hand, keeping only what's proven, and tell the user.

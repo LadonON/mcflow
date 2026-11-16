@@ -224,24 +224,44 @@ All art and code are **original**. The reference image and the listing guide the
 
 ## Stage 6: Knowledge base, cloud sync, `update`
 
-- [ ] 6.1 Validate knowledge-base entry frontmatter (title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date)
-- [ ] 6.2 Version matching: decide when an entry applies to the project's version
-- [ ] 6.3 **[you]** Confirm the knowledge-base repo name
-- [ ] 6.4 Create the `mcflow-knowledge` repo
-- [ ] 6.5 `mcflow kb push`: branch, commit the new entries and open a **pull request** through gh (never push directly)
-- [ ] 6.6 `mcflow kb pull`: merge entries that have been approved without overwriting local edits, and report conflicts
+- [x] 6.1 Validate knowledge-base entry frontmatter (title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date)
+  - Done 2026-11-16: `mcflow/knowledge/entry.py`, standard library only. `mcflow kb validate` checks required fields, quoted release versions, pack format, proof, sources, a real non-future date, a body and a kebab-case file name
+- [x] 6.2 Version matching: decide when an entry applies to the project's version
+  - Done 2026-11-16: an entry applies only to versions it lists (exact) and, if it has one, the same pack format. `mcflow kb list` shows applies or lead only. Decision in PROGRESS.md
+- [x] 6.3 **[you]** Confirm the knowledge-base repo name
+  - Confirmed 2026-11-16: `LadonON/mcflow-knowledge`
+- [x] 6.4 Create the `mcflow-knowledge` repo
+  - Done 2026-11-16: https://github.com/LadonON/mcflow-knowledge (public since 2026-11-16), started from `knowledge-repo/`. A real `kb pull` and `kb push --dry-run` from a fresh workspace worked through gh's credentials
+- [x] 6.4a **[you]** Decide whether to protect `main` there so changes arrive only through pull requests
+  - Done 2026-11-16 (user's yes): GitHub allows protection on a private repo only with Pro, so at the user's request the repo was made public first. `main` now needs a pull request and a passing `validate` check, also for admins; no force pushes or deletion; 0 approvals required so the owner can merge their own
+- [x] 6.5 `mcflow kb push`: branch, commit the new entries and open a **pull request** through gh (never push directly)
+  - Done 2026-11-16: validates first, asks (or `--yes`), pushes a new `kb/...` branch (through a fork without write access) and runs `gh pr create`. Skips entries already proposed or behind. Tested with real git on a local repo and a fake gh; not yet run against GitHub (needs 6.4)
+- [x] 6.6 `mcflow kb pull`: merge entries that have been approved without overwriting local edits, and report conflicts
+  - Done 2026-11-16: adds new entries, updates unedited ones, keeps local edits, reports conflicts with the shared copy in `.mcflow/kb-conflicts/`, leaves locally deleted entries deleted, skips invalid shared entries. Tested against a local repo; not yet against GitHub
 - [ ] 6.7 CI in the knowledge-base repo that validates entries on every PR
-- [ ] 6.8 `mcflow update`: update skills, agents and the knowledge base without touching the user's project files. Detect files the user has edited and show diffs
-- [ ] 6.9 Tests, plus READMEs
-- [ ] 6.10 **Checkpoint:** show the results and wait for the go-ahead
+  - Written 2026-11-16: `knowledge-repo/.github/workflows/validate.yml` validates `entries/` and fails a `kb/` PR that touches anything else. Ran on the first push to `main` 2026-11-16 and passed. Ticked once it has also run on a real `kb push` pull request
+- [x] 6.8 `mcflow update`: update skills, agents and the knowledge base without touching the user's project files. Detect files the user has edited and show diffs
+  - Done 2026-11-16: `.mcflow/managed.json` from `init`. Replaces only unedited managed files, shows diffs for edited ones (`--take` accepts the new version), adds new ones, removes dropped unedited ones, has `--dry-run`, then runs `kb pull` (`--no-kb` skips it)
+- [x] 6.9 Tests, plus READMEs
+  - Done 2026-11-16: 66 new tests (201 total). README section, knowledge skill, workspace knowledge README, CLAUDE.md and AGENTS.md updated; `knowledge-repo/README.md` written
+- [x] 6.10 **Checkpoint:** show the results and wait for the go-ahead
+  - Go-ahead 2026-11-16 ("Move on to the next phase")
 
 ## Stage 7: Cross-platform, docs, release
 
 - [ ] 7.1 Extend CI to integration tests (`init`, `doctor`, server control) on all three OSes
-- [ ] 7.2 Write down each platform's limits in `doctor` and the docs
-- [ ] 7.3 Getting-started guide
+  - Built 2026-11-16: an `integration` job per OS (pipx-installed wheel, `tools install`, `init`, Paper from PaperMC's API with its SHA-256 checked, `server setup`, `doctor`, `update`, `kb validate`, then `mcp-server/scripts/integration.mjs`: 13 checks of server control and a bot). Passed 13/13 locally on Windows. Also fixed the red `main` CI from Stage 5 (real-ctags tests ran against BSD and Exuberant ctags; the smoke test looked for a removed `.gitkeep`). Ticked once CI passes on GitHub
+- [x] 7.2 Write down each platform's limits in `doctor` and the docs
+  - Done 2026-11-16: a **Platform** check (OS, CPU, tested in CI or not, limits from the pinned assets) and `docs/PLATFORMS.md`. `mcflow tags` now refuses a ctags that isn't universal-ctags
+- [x] 7.3 Getting-started guide
+  - Done 2026-11-16: `docs/GETTING_STARTED.md`, linked from the README
 - [ ] 7.4 Humanize every README and guide with the prose humanizer
-- [ ] 7.5 Set up a trusted publisher for the PyPI release (GitHub Actions OIDC)
-- [ ] 7.6 **[you]** Approve publishing `mcflow-cli` to PyPI
+  - 2026-11-16: full pass on the new guide, PLATFORMS.md and the README sections written this stage; every other README scanned for the mechanical tells (dashes, curly quotes, stock phrases), with none found. A full pass on all of them is left for just before the release, once the install instructions change
+- [x] 7.5 ~~Set up a trusted publisher for the PyPI release (GitHub Actions OIDC)~~ Replaced (user, 2026-11-16): no PyPI for now; users install with pipx from GitHub
+  - Done 2026-11-16: `.github/workflows/release.yml`. A `v*` tag runs `scripts/check_release.py` (no dev version, tag matches, runtime pinned), builds and `twine check`s the wheel and sdist, installs the wheel with pipx, then drafts a GitHub release with both attached. The PyPI workflow was removed before it ever ran
+- [x] 7.5c Release prep found while planning 7.5b (2026-11-16)
+  - Done: mcflow-server bumped to 0.1.0 and its version read from `package.json`; `npm-shrinkwrap.json` shipped in the tarball; `mcflow server mcp` checks the tarball's SHA-256 before running it (the old `npx -y <url>` never checked it); `pin_runtime.py` writes LF on Windows; personal paths and names removed from tracked files. The real launcher ran mcflow-server 0.1.0 from a checked tarball. Still in older commits: the author email and one full-name path (rewriting history is the user's call)
+- [ ] 7.5b Before 7.7: publish a runtime release (`runtime-v0.1.0`), pin it with `scripts/pin_runtime.py`, and make `LadonON/mcflow` public, since `npx` and `client install` can't download from a private repo's releases
+- [ ] 7.6 **[you]** Approve tagging and publishing the v0.1.0 GitHub release
 - [ ] 7.7 Release v0.1.0
 - [ ] 7.8 **Final checkpoint**
