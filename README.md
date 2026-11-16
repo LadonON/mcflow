@@ -2,7 +2,7 @@
 
 mcflow sets up Claude Code (and other AI coding tools) to build Paper plugins and resource packs that are ready for a busy production server. It gives the AI a fixed way of working: research before guessing, test on a real server, check the result in-game, and only then show you the change.
 
-> **Status: early development (Stage 7 of 7).** Everything is built; cross-platform CI and the first release are in progress. See [docs/TASKS.md](docs/TASKS.md).
+> **Status: 0.1.0, the first release.** CI runs the full integration test on Windows, macOS and Linux. Open work is listed in [docs/TASKS.md](docs/TASKS.md).
 
 New here? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). What works on which OS and CPU is in [docs/PLATFORMS.md](docs/PLATFORMS.md).
 
@@ -71,7 +71,7 @@ The shared repo's starting files (README, entry validator and CI) are in [knowle
 | Tool | Why |
 |---|---|
 | Java (the version your Paper version needs) | Building and running plugins |
-| Node.js 22+ | The test-server tools (later stages) |
+| Node.js 22+ | mcflow-server (test server, game client, bots and quality gates) |
 | universal-ctags | Required by TokToken. Exuberant ctags won't work. |
 | [TokToken](https://github.com/mauriziofonte/toktoken) | Code search for the AI. AGPL-3.0, downloaded from its official releases and never bundled. |
 | Claude Code | The main AI tool mcflow targets |

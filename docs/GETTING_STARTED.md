@@ -4,9 +4,9 @@ From a fresh machine to Claude Code building a Paper plugin that's tested on a r
 
 ## 1. What you need
 
-- **Minecraft: Java Edition**, bought and signed in. mcflow checks its work in a real game client, so this isn't optional.
-- **Python 3.11 or newer**, and [pipx](https://pipx.pypa.io/) (`python -m pip install --user pipx`, then `python -m pipx ensurepath`).
-- **Claude Code**, signed in.
+- Minecraft: Java Edition, bought and signed in. mcflow checks its work in a real game client, so this isn't optional.
+- Python 3.11 or newer, and [pipx](https://pipx.pypa.io/) (`python -m pip install --user pipx`, then `python -m pipx ensurepath`).
+- Claude Code, signed in.
 
 Java, Node.js, universal-ctags, TokToken, git and the GitHub CLI come next. `mcflow doctor` tells you exactly which ones are missing.
 

@@ -52,7 +52,7 @@ All version differences live in `Compat.java`, behind Stonecutter comments (`//?
 
 Each boundary was read from the real classes with `javap`. CI builds every version, so a wrong boundary fails the build.
 
-**Built for every Paper version mcflow supports**, from 1.17 to 26.3: one jar per version, generated from `src/mcflow/data/paper_versions.json`. Adding a version means adding it to `settings.gradle` and creating `versions/<v>/gradle.properties`.
+It's built for every Paper version mcflow supports, from 1.17 to 26.3: one jar per version, generated from `src/mcflow/data/paper_versions.json`. Adding a version means adding it to `settings.gradle` and creating `versions/<v>/gradle.properties`.
 
 ## Platform notes
 
