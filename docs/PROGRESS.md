@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 6: built (2026-11-16), and waiting for the user at the checkpoint.** The user's "build the next phase" on 2026-11-16 was taken as the go-ahead past the Stage 5 checkpoint. Knowledge-base validation, version matching, `kb pull`, `kb push`, `kb validate`, `kb list` and `mcflow update` are built and tested locally. The shared repo https://github.com/LadonON/mcflow-knowledge (private) was created the same day, and its CI passed on the first push. A real `kb pull` worked against it. Still open: a first real `kb push` pull request (which also proves the PR side of the CI, 6.7), and whether to protect `main` (6.4a).
+**Stage 6: built (2026-11-16), and waiting for the user at the checkpoint.** The user's "build the next phase" on 2026-11-16 was taken as the go-ahead past the Stage 5 checkpoint. Knowledge-base validation, version matching, `kb pull`, `kb push`, `kb validate`, `kb list` and `mcflow update` are built and tested locally. The shared repo https://github.com/LadonON/mcflow-knowledge was created the same day, made public, and its `main` protected. Its CI passed on the first push, and a real `kb pull` worked against it. Still open: a first real `kb push` pull request, which also proves the PR side of the CI (6.7).
 
 ## Session log
 
@@ -78,6 +78,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - **Official-launcher installs get their own game folder (2026-11-14):** `.minecraft/mcflow/<version>/`, set as the launcher profile's gameDir. The first real install found about 100 Forge 1.19.2 mods in the user's `.minecraft/mods`, which must never be mixed with mcflow's Fabric install.
 
 - **Repo visibility (2026-11-14):** stays private until the first release, then goes public (user decision).
+- **Knowledge repo is public (user, 2026-11-16):** `LadonON/mcflow-knowledge` went public on 2026-11-16 so `main` could be protected (GitHub Free has no branch protection or rulesets on private repos). `main` requires a pull request and the `validate` check, for admins too. `LadonON/mcflow` itself stays private.
 - **mcflow-server distribution (2026-11-14):** a tarball on the GitHub runtime release, run with `npx -y <pinned URL>`. No npm account.
 - **Runtime releases are separate from Python releases (2026-11-14):** `runtime-v*` tags build the mod and server and make a draft release. Their checksums are pinned into `versions.toml` before the Python package is released, so the package only installs files it has checksums for.
 - **Local mod builds configure two versions by default (2026-11-14):** Loom prepares Minecraft for every configured version on each Gradle run. Configuring all 31 filled the dev machine's disk, so CI builds the full range in slices of six.

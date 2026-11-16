@@ -229,10 +229,11 @@ All art and code are **original**. The reference image and the listing guide the
 - [x] 6.2 Version matching: decide when an entry applies to the project's version
   - Done 2026-11-16: an entry applies only to versions it lists (exact) and, if it has one, the same pack format. `mcflow kb list` shows applies or lead only. Decision in PROGRESS.md
 - [x] 6.3 **[you]** Confirm the knowledge-base repo name
-  - Confirmed 2026-11-16: `LadonON/mcflow-knowledge`, private
+  - Confirmed 2026-11-16: `LadonON/mcflow-knowledge`
 - [x] 6.4 Create the `mcflow-knowledge` repo
-  - Done 2026-11-16: https://github.com/LadonON/mcflow-knowledge (private), started from `knowledge-repo/`. A real `kb pull` and `kb push --dry-run` from a fresh workspace worked through gh's credentials
-- [ ] 6.4a **[you]** Decide whether to protect `main` there so changes arrive only through pull requests (not done; it's a repo setting)
+  - Done 2026-11-16: https://github.com/LadonON/mcflow-knowledge (public since 2026-11-16), started from `knowledge-repo/`. A real `kb pull` and `kb push --dry-run` from a fresh workspace worked through gh's credentials
+- [x] 6.4a **[you]** Decide whether to protect `main` there so changes arrive only through pull requests
+  - Done 2026-11-16 (user's yes): GitHub allows protection on a private repo only with Pro, so at the user's request the repo was made public first. `main` now needs a pull request and a passing `validate` check, also for admins; no force pushes or deletion; 0 approvals required so the owner can merge their own
 - [x] 6.5 `mcflow kb push`: branch, commit the new entries and open a **pull request** through gh (never push directly)
   - Done 2026-11-16: validates first, asks (or `--yes`), pushes a new `kb/...` branch (through a fork without write access) and runs `gh pr create`. Skips entries already proposed or behind. Tested with real git on a local repo and a fake gh; not yet run against GitHub (needs 6.4)
 - [x] 6.6 `mcflow kb pull`: merge entries that have been approved without overwriting local edits, and report conflicts
