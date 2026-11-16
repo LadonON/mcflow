@@ -113,6 +113,8 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 - **Bot tools done (2026-11-15):** the nine `bot_*` tools pass 30/30 live checks on the 26.3 test server. Two apparent bot bugs turned out to be the test world (a leftover chest on the walking lane) and vanilla spawn protection (bots aren't operators); the tool now names spawn protection when it's the reason.
 
+- **Bot swarms (2026-11-15):** `bot_swarm` passed 8/8 live runs, up to 50 bots, including 70 `/menu` opens and closes under load. `mcflow server setup` now sets `max-players=200` so swarms aren't refused.
+
 ## Open questions
 
 

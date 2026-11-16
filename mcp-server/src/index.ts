@@ -15,6 +15,7 @@ import { PackServer } from "./packServer.js";
 import { readProperties, updateProperties } from "./properties.js";
 import { runCommand } from "./rcon.js";
 import { ServerController } from "./serverProcess.js";
+import { BEHAVIORS, classifyMovementWarnings, parseTps, runSwarm } from "./swarm.js";
 import { loadLocal, loadWorkspace, McflowError, type Workspace } from "./workspace.js";
 
 const VERSION = "0.1.0-dev.0";
@@ -621,6 +622,72 @@ mcp.registerTool(
         clicked: { slot, button, mode },
         window: after ? { id: after.id, title: bots.status(name).window?.title, items: describeSlots(after.slots) } : null,
         cursor: (after ?? bot.inventory).selectedItem?.name ?? null,
+      });
+    }),
+);
+
+mcp.registerTool(
+  "bot_swarm",
+  {
+    title: "Run a swarm of test bots",
+    description:
+      "Join `count` bots (staggered by staggerMs) and run one behavior on all of them for durationSeconds, then " +
+      "disconnect them. Behaviors: idle (stand still), wander (random walks and jumps), use_feature (run " +
+      "featureCommand, turn the head for featureHoldMs, close with featureClose, repeat), join_leave (each bot " +
+      "joins, stays 1-3 s, leaves, repeats). Reports joins, kicks, actions, the server's TPS before and after, and " +
+      "problems and movement corrections from the server log. For MSPT and profiles, use the spark tools.",
+    inputSchema: {
+      count: z.number().int().min(1).max(200).default(10),
+      behavior: z.enum(BEHAVIORS),
+      durationSeconds: z.number().int().min(5).max(600).default(30),
+      staggerMs: z.number().int().min(0).max(5000).default(250),
+      namePrefix: z.string().min(1).max(14).default("Swarm"),
+      featureCommand: z.string().min(1).default("/menu"),
+      featureClose: z.string().min(1).default("sneak").describe('"sneak", "none", or a command such as "/close"'),
+      featureHoldMs: z.number().int().min(200).max(60_000).default(3000),
+    },
+  },
+  (o) =>
+    guard(async () => {
+      const logPath = join(context().ws.serverDir, "logs", "latest.log");
+      const tps = async () => {
+        const s = context().local();
+        return parseTps(await runCommand(s.rconPort, s.rconPassword, "tps").catch(() => ""));
+      };
+      const tpsBefore = await tps();
+      const fromLine = readLog(logPath).nextLine;
+      const report = await runSwarm(bots, {
+        count: o.count,
+        behavior: o.behavior,
+        durationMs: o.durationSeconds * 1000,
+        staggerMs: o.staggerMs,
+        namePrefix: o.namePrefix,
+        featureCommand: o.featureCommand,
+        featureClose: o.featureClose,
+        featureHoldMs: o.featureHoldMs,
+      });
+      const log = readLog(logPath, fromLine);
+      const texts = log.entries.map((e) => e.text);
+      const moves = classifyMovementWarnings(texts);
+      // A bot that disconnects while the server is still sending to it (e.g. another bot's "left the game")
+      // makes Paper log a closed-channel delivery failure. With bots joining and leaving, that's expected.
+      const closedChannel = (t: string) => /Failed to deliver packet/.test(t) && /ClosedChannelException/.test(t);
+      const full = report.failedJoins.filter((f) => /server is full/i.test(f.reason)).length;
+      return ok({
+        ...report,
+        hint: full
+          ? `${full} bots were refused because the server is full. Raise max-players in server/server.properties ` +
+            `(mcflow server setup sets 200) and restart the server.`
+          : undefined,
+        tps: { before: tpsBefore, after: await tps() },
+        serverLog: {
+          problems: summariseProblems(log.problems.filter((p) => !closedChannel(p.text))),
+          deliveryToClosedConnections: log.problems.filter((p) => closedChannel(p.text)).length,
+          cantKeepUp: texts.filter((t) => /Can't keep up/.test(t)).length,
+          movementCorrections: moves.later.length,
+          joinTimeCorrections: moves.atJoin,
+          examples: moves.later.slice(0, 5),
+        },
       });
     }),
 );

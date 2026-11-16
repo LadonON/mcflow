@@ -34,7 +34,7 @@ Both workarounds live in one wrapper around `bot._client.write`. They should be 
 - `/menu` from a bot put it in spectator mode, and the bot's sneak closed the menu and restored survival. So bots can drive the Stage 3 slice through the plugin's real input path (`PlayerInputEvent`).
 - No exceptions in the server log.
 
-**Open:** when five bots spawned at the same point at once, the server logged "moved too quickly!" for three of them. No one was disconnected; it looks like bots pushing each other apart on spawn. It's not investigated yet, and it matters for swarms (task 4.3): spread bots out or stagger joins, then check again.
+**Resolved in task 4.3:** the "moved too quickly!" warnings when several bots join at once are a join-time artefact (see below), not bots pushing each other.
 
 ## Consequences for mcflow
 
@@ -51,3 +51,21 @@ Two things that looked like bot bugs and weren't:
 - **"The chest won't open"** was vanilla spawn protection: the chest was 12 blocks from the world spawn, and bots aren't operators. The tool now says so.
 
 Also seen: 26.x kick reasons arrive as NBT-shaped text (`{"type":"string","value":"..."}`), so `reasonText` unwraps it. mineflayer's `chat` puts BigInt values in the packet, so any packet logging needs a BigInt-safe `JSON.stringify`.
+
+## Swarms (task 4.3, 2026-11-15)
+
+`bot_swarm` (`src/swarm.ts`) runs `idle`, `wander`, `use_feature` or `join_leave` on up to 200 bots. Unit tests run every behavior against fake bots on a virtual clock. The live run (`scripts/swarm-live.mjs`) passed **8/8**:
+
+| Run | Result |
+|---|---|
+| idle ×10 (straight after server start) | 10/10 joined, median join 2.4 s; TPS 20 → 16.9 (startup plus joins) |
+| wander ×10, 30 s | 133 walks, 0 movement corrections after join, TPS back to 19.1 |
+| use_feature `/menu` ×10, 30 s | 70 opens and closes, 878 head turns, no errors; a bot that left mid-menu rejoined in survival |
+| join_leave ×10, 30 s | 100 joins and 100 leaves, no failures |
+| idle ×50 | 50/50 joined (median 3.2 s, max 10.9 s, staggered 100 ms) |
+
+Findings:
+- **"moved too quickly!" right after joining is harmless.** Each bot gets a few in its first second, always at its spawn point, and its position never changes. It happens even with mineflayer's physics held off until spawn (tested), so it isn't the bot moving. Swarm reports count warnings within 3 s of a player's join line separately (`joinTimeCorrections`); later ones are real corrections (`movementCorrections`). It was 0 in every run.
+- **The test server refused bots 21–50 ("The server is full!")** with the default `max-players=20`. `mcflow server setup` now sets 200, and `bot_swarm` says what to do when joins fail this way.
+- **"Failed to deliver packet … ClosedChannelException"** happens when the server sends to a bot that has just left (another bot's "left the game"). It's counted as `deliveryToClosedConnections`, not as a problem.
+- Swarm reports give the server's TPS from Paper's `tps` command. MSPT and profiles come from spark (task 4.4).

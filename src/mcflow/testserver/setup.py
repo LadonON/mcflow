@@ -152,6 +152,8 @@ def run(
             # blocks the user's own client and test bots.
             "white-list": "false",
             "enforce-whitelist": "false",
+            # Room for bot swarms (bot_swarm allows up to 200); the default 20 refuses the rest.
+            "max-players": "200",
             "enable-rcon": "true",
             "rcon.port": str(settings.rcon_port),
             "rcon.password": settings.rcon_password,

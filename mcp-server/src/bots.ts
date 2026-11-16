@@ -131,6 +131,11 @@ export class BotManager {
     return m;
   }
 
+  /** The bot, connected or not, or undefined if there's none by that name. */
+  find(name: string): Managed | undefined {
+    return this.bots.get(name);
+  }
+
   names(): string[] {
     return [...this.bots.keys()];
   }

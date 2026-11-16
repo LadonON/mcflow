@@ -2,7 +2,7 @@
 
 The MCP server that lets Claude Code (or any MCP client) run a local Paper test server for an mcflow workspace. TypeScript, Node 22+.
 
-**Status (2026-11-15):** the server-control tools, the real-client tools (`client_*`, which drive mcflow's Fabric mod) and the bot tools (`bot_*`) work. Swarms and the performance, memory and thread-safety gates are still to come (Stage 4).
+**Status (2026-11-15):** the server-control tools, the real-client tools (`client_*`, which drive mcflow's Fabric mod) and the bot tools (`bot_*`) work. The performance, memory and thread-safety gates are still to come (Stage 4).
 
 ## Tools
 
@@ -32,12 +32,15 @@ Bots are [mineflayer](https://github.com/PrismarineJS/mineflayer) clients that j
 | `bot_inventory` | The bot's items by slot, and the open window's title and items if there is one. |
 | `bot_click_window_slot` | Clicks a slot in the open window (left/right, normal/shift/number-key/drop). |
 | `bot_status` | Position, view, health, food, game mode, open window, and the last kick or error, for one bot or all. |
+| `bot_swarm` | Joins up to 200 bots (staggered) and runs one behavior on all of them for a set time, then disconnects them: `idle`, `wander` (random walks and jumps), `use_feature` (run a command such as `/menu`, turn the head, close it, repeat) or `join_leave` (each bot keeps joining and leaving). Reports joins (with min, median and max join time), kicks, actions, the server's TPS before and after, server-log problems, and movement corrections, with join-time ones counted apart. |
 
 **Versions.** If mineflayer supports the server's Minecraft version, bots speak it natively. If the server is newer (Paper 26.3 while mineflayer stops at 26.1), bots join as mineflayer's newest version, and the server needs **ViaBackwards** to translate.
 
 **mineflayer workarounds.** mineflayer 4.39.0 has two bugs that stop bots from joining a 26.x server, and `src/bots.ts` works around both: it sends the resource-pack reply's UUID as a string, and it sends `tick_end` after every movement packet. Details: `docs/research/Stage 4 Bots.md`.
 
 **Spawn protection.** Inside `spawn-protection` (16 blocks around the world spawn by default), non-operator bots can't use or change blocks. `activate_block` says so when that's why a container didn't open. Op the bot, or test further from spawn.
+
+**Swarm reports.** Two things show up in every swarm and are reported separately rather than as problems. (1) Paper logs a few "moved too quickly!" warnings for each bot in the first seconds after it joins, at its spawn point; nothing moves. (2) When bots leave quickly, Paper logs "Failed to deliver packet" for messages meant for a connection that just closed. A swarm needs `max-players` at least as high as its bot count; `mcflow server setup` sets 200.
 
 **Debugging.** Set `MCFLOW_BOT_TRACE=1` in mcflow-server's environment to log each bot's non-routine packets to stderr.
 

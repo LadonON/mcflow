@@ -164,8 +164,8 @@ All art and code are **original**. The reference image and the listing guide the
 - [ ] 4.1a `mcflow server setup` installs ViaBackwards (pinned SHA-256) when the server is newer than mineflayer supports; `doctor` reports it. Report both mineflayer bugs upstream (**[you]** approve before anything is posted)
 - [x] 4.2 `bot_join`, `bot_leave`, `bot_chat`, `bot_move`, `bot_look`, `bot_use_item`, `bot_inventory`, `bot_click_window_slot`, `bot_status`
   - Done 2026-11-15: `mcp-server/src/bots.ts` plus the nine tools in `src/index.ts`. 49 unit tests pass (15 new), and a live run through the MCP server passed 30/30 (details in `docs/research/Stage 4 Bots.md`). Bots join the 26.3 server as 26.1 through ViaBackwards, with both mineflayer workarounds. `MCFLOW_BOT_TRACE=1` logs packets. Inside spawn protection, non-operator bots can't use blocks, and the tool says so
-- [ ] 4.3 `bot_swarm(count, behavior)`, with defined behaviors (idle, wander, use-feature, join-leave loop)
-  - Check the "moved too quickly!" warnings seen when five bots spawned at the same point at once (spread or stagger joins)
+- [x] 4.3 `bot_swarm(count, behavior)`, with defined behaviors (idle, wander, use-feature, join-leave loop)
+  - Done 2026-11-15: `mcp-server/src/swarm.ts` plus the `bot_swarm` tool. 61 unit tests pass (12 new), and the live run passed 8/8 (`scripts/swarm-live.mjs`): idle ×10 and ×50, wander ×10, `/menu` ×10, join_leave ×10. The "moved too quickly!" warnings are a harmless join-time artefact, reported separately. The test server's `max-players` (20) refused bots 21–50; setup now sets 200
 - [ ] 4.4 **[research]** spark: installation, profiler commands, and reading MSPT and its reports from the command line or RCON
 - [ ] 4.5 Performance gate: record MSPT before and after, and flag regressions against a threshold
 - [ ] 4.6 Memory gate: repeated join, leave and use cycles, then check for leaked listeners, tasks and per-player maps (heap and object counts)
