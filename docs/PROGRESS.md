@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 7: release drafted (2026-11-16).** `runtime-v0.1.0` is published and pinned, `v0.1.0` is tagged on `main`, and its GitHub release is a draft waiting for the user to publish it (7.7). Integration CI passes on Windows, macOS and Linux. Still open: 6.7 (the knowledge repo's CI has not yet run on a real `kb push` pull request), the final checkpoint (7.8), the user's decisions in 3.3b, 4.1b and 5.16a, and the user's go-ahead for the Stage 1, 2 and 5 checkpoints, which isn't recorded.
+**Stage 7: release drafted (2026-11-16).** `runtime-v0.1.0` is published and pinned, `v0.1.0` is tagged on `main`, and its GitHub release is a draft waiting for the user to publish it (7.7). Integration CI passes on Windows, macOS and Linux. Still open: 6.7 (the knowledge repo's CI has not yet run on a real `kb push` pull request), the final checkpoint (7.8), and the user's decisions in 3.3b and 5.16a. The Stage 1, 2 and 5 checkpoints were confirmed on 2026-11-16, and 4.1b is closed with nothing reported.
 
 ## Session log
 
