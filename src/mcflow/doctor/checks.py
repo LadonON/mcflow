@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
+from mcflow import platforms
 from mcflow.doctor import java
 from mcflow.doctor.env import SystemEnv
 from mcflow.paper import PaperVersion, recommended_java
@@ -63,6 +64,35 @@ def java_home_hint(env: SystemEnv, jdk: java.Jdk) -> str:
         macos=f'export JAVA_HOME="{jdk.home}"   (add it to ~/.zshrc to keep it)',
         linux=f'export JAVA_HOME="{jdk.home}"   (add it to ~/.bashrc to keep it)',
     )
+
+
+def platform_limits(os_name: str, machine: str) -> list[str]:
+    """What mcflow can't do on this OS and CPU, from the pinned release assets."""
+    limits = []
+    if f"{os_name}-{machine}" not in pins()["toktoken"]["assets"]:
+        limits.append("TokToken has no build here, so there's no code indexing")
+    if os_name == "windows" and machine != "x86_64":
+        limits.append(
+            "`mcflow tools install` fetches the x86_64 universal-ctags build, "
+            "which needs Windows 11's x64 emulation"
+        )
+    return limits
+
+
+def check_platform(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
+    name = "Platform"
+    key = f"{env.os_name}-{env.machine}"
+    label = f"{platforms.LABELS.get(env.os_name, env.os_name)} {env.machine}"
+    tested = "tested in CI" if key in platforms.CI_TESTED else "not tested in CI"
+    limits = platform_limits(env.os_name, env.machine)
+    if limits:
+        return CheckResult(
+            name,
+            Status.WARN,
+            f"{label} ({tested}). Limits: " + "; ".join(limits) + ".",
+            "Everything else works. docs/PLATFORMS.md lists every platform's limits.",
+        )
+    return CheckResult(name, Status.OK, f"{label}: no known limits ({tested})")
 
 
 def check_paper_version(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
@@ -345,6 +375,7 @@ def check_bots(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
 
 
 ALL_CHECKS: list[Check] = [
+    check_platform,
     check_paper_version,
     check_java,
     check_node,

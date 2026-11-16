@@ -244,15 +244,23 @@ All art and code are **original**. The reference image and the listing guide the
   - Done 2026-11-16: `.mcflow/managed.json` from `init`. Replaces only unedited managed files, shows diffs for edited ones (`--take` accepts the new version), adds new ones, removes dropped unedited ones, has `--dry-run`, then runs `kb pull` (`--no-kb` skips it)
 - [x] 6.9 Tests, plus READMEs
   - Done 2026-11-16: 66 new tests (201 total). README section, knowledge skill, workspace knowledge README, CLAUDE.md and AGENTS.md updated; `knowledge-repo/README.md` written
-- [ ] 6.10 **Checkpoint:** show the results and wait for the go-ahead
+- [x] 6.10 **Checkpoint:** show the results and wait for the go-ahead
+  - Go-ahead 2026-11-16 ("Move on to the next phase")
 
 ## Stage 7: Cross-platform, docs, release
 
 - [ ] 7.1 Extend CI to integration tests (`init`, `doctor`, server control) on all three OSes
-- [ ] 7.2 Write down each platform's limits in `doctor` and the docs
-- [ ] 7.3 Getting-started guide
+  - Built 2026-11-16: an `integration` job per OS (pipx-installed wheel, `tools install`, `init`, Paper from PaperMC's API with its SHA-256 checked, `server setup`, `doctor`, `update`, `kb validate`, then `mcp-server/scripts/integration.mjs`: 13 checks of server control and a bot). Passed 13/13 locally on Windows. Also fixed the red `main` CI from Stage 5 (real-ctags tests ran against BSD and Exuberant ctags; the smoke test looked for a removed `.gitkeep`). Ticked once CI passes on GitHub
+- [x] 7.2 Write down each platform's limits in `doctor` and the docs
+  - Done 2026-11-16: a **Platform** check (OS, CPU, tested in CI or not, limits from the pinned assets) and `docs/PLATFORMS.md`. `mcflow tags` now refuses a ctags that isn't universal-ctags
+- [x] 7.3 Getting-started guide
+  - Done 2026-11-16: `docs/GETTING_STARTED.md`, linked from the README
 - [ ] 7.4 Humanize every README and guide with the prose humanizer
+  - 2026-11-16: full pass on the new guide, PLATFORMS.md and the README sections written this stage; every other README scanned for the mechanical tells (dashes, curly quotes, stock phrases), with none found. A full pass on all of them is left for just before the release, once the install instructions change
 - [ ] 7.5 Set up a trusted publisher for the PyPI release (GitHub Actions OIDC)
+  - Built 2026-11-16: `.github/workflows/release-pypi.yml` (a `v*` tag builds, runs `twine check` and `scripts/check_release.py`, then publishes through OIDC in the `pypi` environment). `check_release.py` refuses a dev version, a tag that doesn't match, or an unpinned runtime release; today it reports both runtime pins missing
+- [ ] 7.5a **[you]** On pypi.org, add a pending trusted publisher: project `mcflow-cli`, owner LadonON, repository mcflow, workflow `release-pypi.yml`, environment `pypi`. Then decide whether the `pypi` GitHub environment should require your approval
+- [ ] 7.5b Before 7.7: publish a runtime release (`runtime-v0.1.0`), pin it with `scripts/pin_runtime.py`, and make `LadonON/mcflow` public, since `npx` and `client install` can't download from a private repo's releases
 - [ ] 7.6 **[you]** Approve publishing `mcflow-cli` to PyPI
 - [ ] 7.7 Release v0.1.0
 - [ ] 7.8 **Final checkpoint**

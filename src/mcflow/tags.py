@@ -47,10 +47,29 @@ def _run(cmd: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
 
 
 def find_ctags() -> str:
+    """The `ctags` on PATH, only if it's universal-ctags (macOS ships BSD ctags, some Windows
+    toolchains bundle Exuberant Ctags; neither reads mcflow's optlibs)."""
     exe = shutil.which("ctags")
     if not exe:
         raise TagsError(
             "universal-ctags isn't on PATH. Run `mcflow doctor` for the install command."
+        )
+    try:
+        done = subprocess.run(
+            [exe, "--version"], capture_output=True, text=True, check=False, timeout=20
+        )
+        first = (
+            (done.stdout or done.stderr).strip().splitlines()[0]
+            if (done.stdout or done.stderr).strip()
+            else ""
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        first = ""
+    if "Universal Ctags" not in first:
+        raise TagsError(
+            f"The ctags on PATH ({exe}) isn't universal-ctags"
+            + (f": {first!r}" if first else "")
+            + ". Run `mcflow doctor` for the install command."
         )
     return exe
 

@@ -2,7 +2,9 @@
 
 mcflow sets up Claude Code (and other AI coding tools) to build Paper plugins and resource packs that are ready for a busy production server. It gives the AI a fixed way of working: research before guessing, test on a real server, check the result in-game, and only then show you the change.
 
-> **Status: early development (Stage 6 of 7).** The workspace, test server, client mod, bots, gates, skills, agents and knowledge-base sync are built. Cross-platform testing, docs and the first release come next. See [docs/TASKS.md](docs/TASKS.md).
+> **Status: early development (Stage 7 of 7).** Everything is built; cross-platform CI and the first release are in progress. See [docs/TASKS.md](docs/TASKS.md).
+
+New here? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). What works on which OS and CPU is in [docs/PLATFORMS.md](docs/PLATFORMS.md).
 
 ## Install
 
@@ -79,7 +81,7 @@ The shared repo's starting files (README, entry validator and CI) are in [knowle
 | Claude Code | The main AI tool mcflow targets |
 | git, GitHub CLI | Sharing knowledge entries through pull requests |
 
-TokToken has builds for Windows x64, macOS (Intel and Apple Silicon) and Linux (x64, ARM64, ARMv7). On any other platform, `doctor` reports that code indexing isn't available.
+TokToken has builds for Windows x64, macOS (Intel and Apple Silicon) and Linux (x64, ARM64, ARMv7). On any other platform, `doctor` reports that code indexing isn't available. [docs/PLATFORMS.md](docs/PLATFORMS.md) has the full list of limits.
 
 ## Develop
 
@@ -89,6 +91,8 @@ python -m venv .venv
 pytest
 ruff check src tests scripts && ruff format --check src tests scripts
 ```
+
+CI runs the unit tests on Windows, macOS and Ubuntu, plus an integration job on each that installs the wheel with pipx and runs a real Paper server through mcflow-server (`mcp-server/scripts/integration.mjs`).
 
 To refresh the built-in Paper version list, run `python scripts/refresh_paper_cache.py`. Every third-party version mcflow depends on is pinned in [src/mcflow/versions.toml](src/mcflow/versions.toml), and the evidence for each pin is in [docs/research/](docs/research/).
 

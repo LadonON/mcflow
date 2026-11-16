@@ -4,7 +4,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 ## Current stage
 
-**Stage 6: built (2026-11-16), and waiting for the user at the checkpoint.** The user's "build the next phase" on 2026-11-16 was taken as the go-ahead past the Stage 5 checkpoint. Knowledge-base validation, version matching, `kb pull`, `kb push`, `kb validate`, `kb list` and `mcflow update` are built and tested locally. The shared repo https://github.com/LadonON/mcflow-knowledge was created the same day, made public, and its `main` protected. Its CI passed on the first push, and a real `kb pull` worked against it. Still open: a first real `kb push` pull request, which also proves the PR side of the CI (6.7).
+**Stage 7: in progress (2026-11-16).** Built: cross-platform integration CI (passes 13/13 locally on Windows, not yet run on GitHub), the doctor Platform check and `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, and the PyPI trusted-publishing workflow with release checks. Waiting on: a CI run on GitHub (the branch isn't pushed), the user's PyPI publisher setup (7.5a), a pinned runtime release and a public repo (7.5b), then approval to publish (7.6).
 
 ## Session log
 
@@ -33,6 +33,12 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 - Built `mcflow/knowledge/entry.py` (frontmatter parser, validator, version matching), `mcflow/knowledge/sync.py` (pull, push), `mcflow/manifest.py` and `mcflow/update.py`. New commands: `kb validate`, `kb list`, `kb pull`, `kb push` and `update`.
 - `knowledge-repo/` holds the shared repo's first files: README, `entries/`, `scripts/validate_entries.py` (an exact copy of `entry.py`, checked by a test) and the validation workflow.
 - 201 tests pass (66 new) and ruff is clean. The pull and push tests run real git against a local bare repo, with a fake `gh` for the pull request and fork calls. A manual run of `init`, `kb pull`, `kb list` and `update` against a local repo behaved as expected.
+
+### 2026-11-16: Stage 7
+
+- The last CI run on `main` (Stage 5) had failed: the real-ctags tests ran against macOS's BSD ctags and the Windows runner's Exuberant Ctags (they only checked that some `ctags` existed), and the pipx smoke test looked for `.claude/skills/.gitkeep`, which the template no longer has. Fixed both; `mcflow tags` now refuses a non-universal ctags with a clear message, and CI installs universal-ctags on every runner.
+- Integration job per OS, and `mcp-server/scripts/integration.mjs`. Locally on Windows (Java 21, Node 24, Paper 1.21.11 build 132, its SHA-256 matching PaperMC's): 13/13 checks.
+- Added the doctor Platform check, `docs/PLATFORMS.md`, `docs/GETTING_STARTED.md`, `release-pypi.yml` and `scripts/check_release.py`. 214 tests pass.
 
 ## Environment (this dev machine, 2026-11-14)
 

@@ -21,6 +21,19 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install
         run: python -m pip install -e ".[dev]"
+      # universal-ctags, so the real-ctags tests run (macOS ships BSD ctags, Windows runners Exuberant)
+      - name: universal-ctags (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y universal-ctags
+      - name: universal-ctags (macOS)
+        if: runner.os == 'macOS'
+        run: brew install universal-ctags
+      - name: universal-ctags (Windows, through mcflow tools install)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mcflow tools install --dir "$RUNNER_TEMP/mcflow-bin"
+          echo "$RUNNER_TEMP/mcflow-bin" >> "$GITHUB_PATH"
       - name: Lint
         run: |
           ruff check src tests scripts
@@ -89,32 +102,90 @@ jobs:
           name: mcflow-client-jars-${{ strategy.job-index }}
           path: client-mod/build/libs/*.jar
 
-  package:
-    name: pipx install smoke test (${{ matrix.os }})
+  integration:
+    # Task 7.1: the installed package end to end on each OS. pipx install, tools install, init,
+    # doctor, server setup on a real Paper jar, then server control and a bot through mcflow-server.
+    name: integration (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      PAPER_VERSION: "1.21.11"
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - name: Build wheel
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Build the wheel and install it with pipx
         run: |
           python -m pip install build pipx
           python -m build --wheel
-      - name: Install with pipx and run init + doctor
-        shell: bash
-        run: |
           python -m pipx install dist/*.whl
-          export PATH="$HOME/.local/bin:$PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: mcflow tools install
+        run: |
           mcflow --version
-          mcflow init "$RUNNER_TEMP/demo" --paper-version latest
+          mcflow tools install --dir "$RUNNER_TEMP/mcflow-bin"
+          echo "$RUNNER_TEMP/mcflow-bin" >> "$GITHUB_PATH"
+      - name: universal-ctags (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y universal-ctags
+      - name: universal-ctags (macOS)
+        if: runner.os == 'macOS'
+        run: brew install universal-ctags
+      - name: mcflow init
+        run: |
+          mcflow init "$RUNNER_TEMP/demo" --paper-version "$PAPER_VERSION"
           test -f "$RUNNER_TEMP/demo/CLAUDE.md"
-          test -f "$RUNNER_TEMP/demo/.claude/skills/.gitkeep"
+          test -f "$RUNNER_TEMP/demo/.claude/skills/knowledge/SKILL.md"
+          test -f "$RUNNER_TEMP/demo/.mcflow/managed.json"
+      - name: Paper jar, then mcflow server setup
+        # This test server belongs to the project's own CI; the EULA is accepted for it here.
+        run: |
+          python scripts/ci_fetch_paper.py "$PAPER_VERSION" "$RUNNER_TEMP/demo/server"
           cd "$RUNNER_TEMP/demo"
-          # doctor exits 1 when tools are missing on the runner; we only need it to run cleanly
+          mcflow server setup --accept-eula
+      - name: mcflow doctor
+        run: |
+          cd "$RUNNER_TEMP/demo"
+          # Claude Code and the client mod aren't on runners, so doctor exits 1; check the rest
           mcflow doctor --json > doctor.json || [ $? -eq 1 ]
-          python -c "import json; print(len(json.load(open('doctor.json'))), 'checks ran')"
+          python - <<'EOF'
+          import json
+          checks = {c["name"]: c for c in json.load(open("doctor.json"))}
+          for c in checks.values():
+              print(f"{c['status']:5} {c['name']}: {c['summary']}")
+          must_pass = ["Platform", "Java", "Node.js", "universal-ctags", "TokToken", "git", "Test bots"]
+          bad = [n for n in must_pass if checks.get(n, {}).get("status") != "ok"]
+          # PaperMC only supports its newest version, so an older one is a warning, never a failure
+          if checks.get("Paper version", {}).get("status") not in ("ok", "warn"):
+              bad.append("Paper version")
+          assert not bad, f"expected ok: {bad}"
+          EOF
+      - name: mcflow update and kb validate
+        run: |
+          cd "$RUNNER_TEMP/demo"
+          mcflow update --no-kb | tee update.txt
+          grep -q "0 change(s)" update.txt
+          mcflow kb validate
+      - name: Server control and a test bot through mcflow-server
+        working-directory: mcp-server
+        run: |
+          npm ci
+          npm run build
+          node scripts/integration.mjs "$RUNNER_TEMP/demo"
+      - name: Server log on failure
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/demo/server/logs/latest.log" || true
