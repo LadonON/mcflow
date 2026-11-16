@@ -149,7 +149,7 @@ All art and code are **original**. The reference image and the listing guide the
 - [x] 3.11 Re-verify
   - Done 2026-11-15: build, tests (now 18) and two in-game runs pass, 5/5 checks each, screenshots in `server/screenshots/stage3-menu-reverify/`. The face rendered in the first verify run but was blank, then black, in the re-runs. That's the offline test server: the client looks the skin up by name. The plugin now passes the player's signed skin (the `textures` profile property), which online-mode servers always have; this is unit-tested but can't be seen on the offline test server
 - [x] 3.12 Re-index (TokToken by hand at this point)
-  - Done 2026-11-15: TokToken 0.5.0 (SHA-256 matches the pin) and universal-ctags p6.2.20261011.0 (matches GitHub's digest) installed under `~/.local/mcflow-tools/` with the user's OK. **TokToken's default filter skips `plugins/` as vendored code**, so the workspace indexed only Markdown. `--full` indexes all 38 files (426 symbols: Java, Python, Markdown). The CLAUDE.md and AGENTS.md templates now say to index in full mode. Resource-pack JSON still isn't indexed (Stage 5, task 5.15)
+  - Done 2026-11-15: TokToken 0.5.0 (SHA-256 matches the pin) and universal-ctags p6.2.20261011.0 (matches GitHub's digest) installed under `~/.local/mcflow-tools/` with the user's OK. **TokToken's default filter skipped every plugin**, so the workspace indexed only Markdown (the cause is any folder with a `build.gradle` counting as vendored, not the folder name; see `docs/research/Stage 5 TokToken coverage.md`). `--full` indexes all 38 files (426 symbols: Java, Python, Markdown). The CLAUDE.md and AGENTS.md templates now say to index in full mode. Resource-pack JSON still isn't indexed (Stage 5, task 5.15)
 - [x] 3.13 Write the first verified entries in `knowledge/`
   - Done 2026-11-15: five entries in `mcflow-demo/knowledge/`: font-glyph-title-ui, player-head-text-object, view-driven-cursor, spectator-menu-input, mockbukkit-26-3. Each names the test or screenshot that proves it, and marks what isn't proven yet (a real left click; the signed-skin face in game)
 - [x] 3.14 Present the screenshots next to the reference image, with the test results and the open gaps (performance and memory checks arrive in Stage 4)
@@ -180,27 +180,46 @@ All art and code are **original**. The reference image and the listing guide the
   - Done 2026-11-15: `gate_resource_pack`. Pack format, JSON, every texture, model and font reference (`minecraft:` ones against the client jar), and bitmap-font rules: ascent no greater than height, equal `chars` rows, a texture that fits the grid. It would have caught the Stage 3 missing-glyph bug
 - [x] 4.9 Run the slice through every gate
   - Done 2026-11-15: the /menu slice passed every gate live, 6/6 (`scripts/gates-live.mjs`; results in the research doc), with no spark uploads. 81 mcflow-server tests (20 new) and 111 Python tests pass
-- [ ] 4.10 **Checkpoint:** show the results and wait for the go-ahead
+- [x] 4.10 **Checkpoint:** show the results and wait for the go-ahead
+  - Go-ahead given 2026-11-15 ("Go to Stage 5"). Task 4.1b stays open
 
 ## Stage 5: Skills, agents, TokToken, unsupported languages
 
-- [ ] 5.1 Skill: research
-- [ ] 5.2 Skill: knowledge
-- [ ] 5.3 Skill: verify
-- [ ] 5.4 Skill: code-humanizer (final), with tests that check it leaves behavior unchanged
-- [ ] 5.5 Install the humanizer (prose) skill from the pinned blader/humanizer commit
-- [ ] 5.6 Skill: resource-packs (final, aware of each version)
-- [ ] 5.7 Skill: paper-plugin (final)
-- [ ] 5.8 Skill: ui-layout
-- [ ] 5.9 Agent: researcher (Sonnet)
-- [ ] 5.10 Agent: indexer (Haiku)
-- [ ] 5.11 Agent: verifier-visual (Sonnet)
-- [ ] 5.12 Agent: verifier-output (Sonnet)
-- [ ] 5.13 Finalise `CLAUDE.md` and `AGENTS.md`
-- [ ] 5.14 Make the installer download TokToken from its official release and check its SHA-256
-- [ ] 5.15 Check TokToken coverage for JSON, `.mcmeta`, GLSL and YAML
-- [ ] 5.16 Unsupported-language flow: ask the user, research, then try a universal-ctags optlib through TokToken
-- [ ] 5.17 Ship the optlib definitions inside the mcflow package, with tests
+- [x] 5.1 Skill: research
+  - Done 2026-11-15: `.claude/skills/research/SKILL.md`. Primary sources first (the server and client jars, published artifacts), one doc per topic, researcher agents in parallel, no uploads
+- [x] 5.2 Skill: knowledge
+  - Done 2026-11-15: `.claude/skills/knowledge/SKILL.md`. Lookup with version and pack-format matching, entries only after proof, `mcflow kb push` as a pull request
+- [x] 5.3 Skill: verify
+  - Done 2026-11-15: `.claude/skills/verify/SKILL.md`. Build and tests (stderr too), resource-pack gate, deploy, logs, in-game checks with both verifier agents and bots, then the performance, memory and thread-safety gates; spark stays local
+- [x] 5.4 Skill: code-humanizer (final), with tests that check it leaves behavior unchanged
+  - Done 2026-11-15: final skill plus a behaviour guard. `mcflow humanize snapshot|check <project>` builds, tests and records passing tests and the public API (`javap -public`), then fails on a broken or missing test or any public-signature change. 10 unit tests; on the real menu plugin it reported unchanged, caught a renamed public handler (exit 1), and passed again after the revert
+- [x] 5.5 Install the humanizer (prose) skill from the pinned blader/humanizer commit
+  - Done 2026-11-15: blader/humanizer 4.0.0 at the pinned commit `b48c832` (downloaded with the user's OK and read in full: a writing guide, no fetch or exec instructions, MIT). Vendored with its LICENSE in `templates/project/.claude/skills/humanizer/`; `versions.toml` pins both SHA-256 sums and a test checks the copies
+- [x] 5.6 Skill: resource-packs (final, aware of each version)
+  - Done 2026-11-15: version-aware. The pack format is read from the server jar, never hardcoded; the custom-item model system is shown per version range; sounds, `.mcmeta` animation and shaders are marked research-before-use; the proven 26.3 font rules are kept
+- [x] 5.7 Skill: paper-plugin (final)
+  - Done 2026-11-15: adds threads (the async-then-`runTask` pattern), state and cleanup, commands, configs and persistence, the internals rule, and the 26.3 and MockBukkit facts
+- [x] 5.8 Skill: ui-layout
+  - Done 2026-11-15: `.claude/skills/ui-layout/SKILL.md`, the flow used in Stage 3: ask, spec in GUI pixels, mockup from the build's own generator, approval, measured comparison
+- [x] 5.9 Agent: researcher (Sonnet)
+  - Done 2026-11-15: `.claude/agents/researcher.md` (Sonnet). Read-only tools plus Bash for inspecting jars and registries; writes `research/`; reports downloads back instead of making them
+- [x] 5.10 Agent: indexer (Haiku)
+  - Done 2026-11-15: `.claude/agents/indexer.md` (Haiku). Updates the index, checks `plugins/` is in it, reports unparsed languages
+- [x] 5.11 Agent: verifier-visual (Sonnet)
+  - Done 2026-11-15: `.claude/agents/verifier-visual.md` (Sonnet). Measures screenshots against the spec and mockups; known variable areas excluded
+- [x] 5.12 Agent: verifier-output (Sonnet)
+  - Done 2026-11-15: `.claude/agents/verifier-output.md` (Sonnet). Correctness, errors, formatting; knows the test server's harmless noise. A scaffold test checks every agent's model and tools
+- [x] 5.13 Finalise `CLAUDE.md` and `AGENTS.md`
+  - Done 2026-11-15: no more draft notes. Both list the real tools, skills and agents, the humanize guard, `.toktoken.json` and `mcflow tags`, the unsupported-language flow, and a never-upload rule (spark)
+- [x] 5.14 Make the installer download TokToken from its official release and check its SHA-256
+  - Done 2026-11-15: `mcflow tools install`. TokToken's pinned asset for the OS and CPU (and universal-ctags' pinned official build on Windows, licence files included), each SHA-256-checked before writing, into `~/.local/bin`. 6 unit tests; checked with the real pinned files (both run). `doctor` now points at it
+- [x] 5.15 Check TokToken coverage for JSON, `.mcmeta`, GLSL and YAML
+  - Done 2026-11-15: TokToken 0.5.0 indexes Java, Gradle, Python and Markdown, but not pack `.json`, `.mcmeta` or GLSL, and YAML only as text. Also found the real cause of skipped plugins (any folder with a `build.gradle` counts as vendored); the template now ships `.toktoken.json` with the smart filter off. Details: `docs/research/Stage 5 TokToken coverage.md`
+- [x] 5.16 Unsupported-language flow: ask the user, research, then try a universal-ctags optlib through TokToken
+  - Done 2026-11-15: the flow is in CLAUDE.md and AGENTS.md (ask, research, optlib, check with `mcflow tags`). Tried for GLSL, `.mcmeta` and YAML: ctags parses them with optlibs, but TokToken 0.5.0 never sends those extensions to ctags (`extra_extensions` can't add discovery). So `mcflow tags` covers them for now; a TokToken change is a proposal that needs the user's approval (5.16a)
+- [ ] 5.16a **[you]** Decide whether to propose a TokToken change upstream (a configurable source-extension list, or honouring ctags' `--list-maps`) so pack JSON, `.mcmeta`, GLSL and YAML reach its index. Nothing is filed without approval
+- [x] 5.17 Ship the optlib definitions inside the mcflow package, with tests
+  - Done 2026-11-15: `templates/project/.ctags.d/` (`minecraft-glsl.ctags`, `minecraft-json.ctags`, `yaml-keys.ctags`), used by `mcflow tags`. 6 tests, including real ctags runs on a shader, `.mcmeta`, a font and a config
 - [ ] 5.18 **Checkpoint:** show the results and wait for the go-ahead
 
 ## Stage 6: Knowledge base, cloud sync, `update`

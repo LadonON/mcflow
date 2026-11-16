@@ -2,19 +2,17 @@
 
 This workspace builds Paper plugins and resource packs for a production server with 500+ concurrent players, using the mcflow workflow. Your work is judged by two things: the code holds up under that load, and the user finds it easy to work with you.
 
-<!-- mcflow draft (0.1): the MCP server, skills and helper agents named below arrive in later mcflow releases. If something this file tells you to use doesn't exist yet, tell the user which step you can't run. Never skip it silently. -->
-
 ## Project facts
 
 - Target: **Paper ${paper_version}**, which needs **Java ${java_minimum}+**. Both values live in `mcflow.toml`. Never assume a different version.
-- Before you build or run anything on a machine for the first time, run `mcflow doctor` and fix whatever it reports.
+- Before you build or run anything on a machine for the first time, run `mcflow doctor` and fix whatever it reports. `mcflow tools install` installs TokToken (and universal-ctags on Windows).
 
 ## First-time setup on a machine
 
 Do these in order before the first development task. Each one needs something only the user can do, so ask and wait.
 
 1. **Paper jar.** Ask the user to download Paper ${paper_version} from https://papermc.io/downloads/paper and put the jar in `server/`. Never download it yourself.
-2. **Test server.** Run `mcflow server setup`. It checks the jar, picks Java, configures a localhost-only server with RCON, and installs ViaVersion.
+2. **Test server.** Run `mcflow server setup`. It checks the jar, picks Java, configures a localhost-only server with RCON, and installs ViaVersion (plus ViaBackwards if the test bots need it).
 3. **EULA.** Show the user https://aka.ms/MinecraftEULA and ask whether they accept it. Only if they say yes, run `mcflow server setup --accept-eula`.
 4. **Client mod (required).** mcflow's Fabric client mod is what lets you join the server, run player commands and take screenshots. Without it, no in-game check can run. Ask the user to close Minecraft. Then run `mcflow client install`, which targets the official launcher's `.minecraft` folder, or pass the path they give you (a Prism instance, a custom game folder). Relay the steps it prints.
 5. **Start the game.** Ask the user to start the Fabric installation for Minecraft ${paper_version} from their launcher, signed in with their own account. Then use `client_launch` to attach to it.
@@ -27,28 +25,35 @@ The client mod only joins servers on this computer and only acts while it's conn
 |---|---|
 | `assets/` | Files the user drops in: logos, images, video, sounds, models. Read `assets/README.md`. |
 | `research/` | One Markdown doc per topic, titled by subject, e.g. `research/Animated Item Textures.md`. Unverified findings stay here. |
-| `knowledge/` | Verified techniques only (see "Knowledge base"). |
+| `knowledge/` | Verified techniques only (the **knowledge** skill). |
 | `plugins/` | Gradle (Java) plugin projects. |
 | `resourcepacks/` | Resource pack sources. |
 | `layouts/` | UI layouts, either from the user or proposed by you and approved. |
 | `server/` | The local test server. The user supplies the Paper jar; never download one. |
 
+## Tools you have
+
+- **mcflow-server (MCP):** `server_*` (start, stop, restart, status, command, logs), `plugin_deploy`, `resourcepack_build_and_serve`, `client_*` (the real client: launch, join, run, screenshot, inventory), `bot_*` and `bot_swarm` (mineflayer test bots), `gate_*` (performance, memory, thread safety, resource pack).
+- **TokToken (MCP):** code search. See "Code search".
+- **Skills:** research, knowledge, verify, ui-layout, paper-plugin, resource-packs, code-humanizer, humanizer.
+- **Agents:** researcher, indexer, verifier-visual, verifier-output (smaller models; send them work with the Agent tool).
+
 ## Mandatory task pipeline
 
 Do every development task in this order. Don't skip, merge or reorder steps.
 
-1. **Knowledge, then research.** Check `knowledge/` for every API, file format and resource-pack feature you'll touch. If there's no entry, or the entry doesn't cover Paper ${paper_version} and its `pack_format`, run the **research** skill first.
+1. **Knowledge, then research.** Check `knowledge/` for every API, file format and resource-pack feature you'll touch (the **knowledge** skill). If there's no entry, or the entry doesn't cover Paper ${paper_version} and its pack format, run the **research** skill first.
 2. **Plan.** For anything a player sees (inventories, GUIs, HUD and font glyphs, scoreboards, boss bars, chat formatting), run the **ui-layout** flow and get the layout approved before writing code.
-3. **Implement.**
-4. **Verify.** Build, unit tests, deploy to the test server, read the logs. Then the verifier agents check in-game command output and screenshots. Then the performance and memory gates. The **verify** skill runs all of this.
-5. **Humanize.** Run **code-humanizer** on the code changed in this task, and only that code.
-6. **Re-verify.** Rebuild, rerun the tests and do a quick in-game check. Humanizing must not change behavior.
+3. **Implement.** Follow the **paper-plugin** and **resource-packs** skills.
+4. **Verify.** The **verify** skill: build, unit tests, resource-pack gate, deploy, logs, in-game checks with the verifier agents, then the performance, memory and thread-safety gates.
+5. **Humanize.** `mcflow humanize snapshot <project>`, then the **code-humanizer** skill on the code changed in this task only, then `mcflow humanize check <project>`. Revert any edit the check rejects.
+6. **Re-verify.** Rebuild, rerun the tests and do a quick in-game check. Humanizing must not change behaviour.
 7. **Re-index.** The **indexer** agent re-indexes with TokToken.
 8. **Record.** Write anything you learned and proved to `knowledge/`.
-9. **Present.** Only now show the change to the user, with screenshots, test results and MSPT before and after.
+9. **Present.** Only now show the change to the user, with screenshots, test results and tick times (idle, under load, against the baseline).
 10. **Offer to share.** Ask whether to upload the new knowledge entries. If they say yes, run `mcflow kb push`, which opens a pull request for human review.
 
-Never present work as finished if it's unverified, un-humanized or un-indexed. If a step fails, fix it and restart from step 4.
+Never present work as finished if it's unverified, un-humanized or un-indexed. If a step fails, fix it and restart from step 4. If a step can't run (no client, no TokToken), say which and why; never skip one silently.
 
 ## Quality gates
 
@@ -56,35 +61,23 @@ A change is done only when all of these pass:
 
 - **Build:** compiles with no warnings that matter.
 - **Unit tests:** MockBukkit tests cover the new logic.
-- **Thread safety:** no blocking file, network or database work on the main thread. Use Paper's schedulers correctly, and never touch the Bukkit API from an async thread.
+- **Thread safety:** no blocking file, network or database work on the main thread, and no Bukkit API calls off it (`gate_thread_safety`).
 - **Runtime:** deploys with no exceptions or stack traces in the log. Restart the server, never use `/reload`.
-- **Performance:** a bot swarm under load, profiled with spark. Report MSPT before and after, and flag any regression.
-- **Memory:** players join, leave and use the feature repeatedly with no leaked listeners, tasks or per-player map entries.
-- **Resource pack:** valid for this version's `pack_format`, and every model, texture and font it references exists.
+- **Performance:** a bot swarm under load, with tick times compared against a baseline (`gate_performance`). Flag any regression.
+- **Memory:** players join, leave and use the feature repeatedly with no leaked listeners, tasks or per-player data (`gate_memory`).
+- **Resource pack:** valid for this version's pack format, every referenced model, texture and font present, and font providers valid (`gate_resource_pack`).
+
+## Never send the user's data anywhere
+
+Nothing from this workspace or its server goes to a third-party service without the user's explicit yes. In particular, Paper bundles spark, and some spark commands upload to spark.lucko.me: never run `spark health`, a profile with `--timeout`, or `spark profiler stop` without `--save-to-file`. The gates use only local commands.
 
 ## Code search
 
 - Use the TokToken MCP tools (`search_symbols`, `inspect_outline`, `inspect_symbol`, `find_references`, and the rest) to find code. Don't grep or read whole files unless TokToken can't answer, and say when you fall back.
-- After any code change, the indexer agent runs an incremental re-index.
-- **Index in full mode** (`full=true`, CLI `--full`). TokToken's default filter treats a folder named `plugins/` as vendored code and skips it, so the default index misses every plugin in this workspace (seen with TokToken 0.5.0).
-- If you meet files in a language TokToken can't parse (resource-pack JSON, `.mcmeta`, GLSL `.fsh`/`.vsh`/`.glsl`, YAML), **ask the user** before building a parser. If they agree, research the language first and try a universal-ctags optlib definition before anything deeper. Parser definitions belong in the mcflow package. Never modify TokToken itself.
-
-## Knowledge base
-
-- Each entry in `knowledge/` is one technique, with frontmatter: `title`, `minecraft_versions`, `pack_format` (if relevant), `paper_api_version`, `verified_by` (a test name or a screenshot path), `sources`, `date`.
-- Add an entry only after the technique is **proven** in a test or in-game. Anything unproven stays in `research/`.
-- An entry applies only if its versions cover Paper ${paper_version}. Otherwise treat it as missing and research.
-
-## Research
-
-- Check current official documentation before relying on any library, API, file format or tool version. Your memory of Minecraft formats and Paper APIs is often out of date.
-- Write one doc per topic to `research/<Topic>.md`, with sources and the date.
-
-## Paper code rules
-
-- Main thread: Bukkit API calls only. Async work (I/O, database, HTTP) goes through Paper's async scheduler, and results return to the main thread before touching game state.
-- Every listener, task and per-player map entry must be cleaned up on quit or disable.
-- Configs and persistence load off the main thread at startup and save asynchronously.
+- `.toktoken.json` turns TokToken's smart filter off. Keep it: the filter treats any folder with a `build.gradle` as vendored code and would skip every plugin.
+- After any code change, the **indexer** agent runs an incremental re-index.
+- **Files TokToken can't index** (resource-pack `.json`, `.mcmeta`, GLSL `.fsh`/`.vsh`/`.glsl`, YAML configs): use `mcflow tags [paths] -q <text>`, which runs universal-ctags with mcflow's definitions in `.ctags.d/`.
+- **A language nothing covers:** ask the user before building a parser. If they agree, research the language first (`research/`), then try a universal-ctags optlib definition in `.ctags.d/` and check it with `mcflow tags`. Definitions that work belong in the mcflow package. Never modify TokToken itself; a TokToken change is a proposal for the user to approve.
 
 ## Writing for the user
 

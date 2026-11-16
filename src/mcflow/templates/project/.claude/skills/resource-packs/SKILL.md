@@ -1,19 +1,21 @@
 ---
 name: resource-packs
-description: Build and check resource packs in resourcepacks/<name>/ - pack.mcmeta and pack formats, fonts and custom GUI glyphs, HUD and title layouts, textures. Use whenever creating or changing a resource pack, drawing UI with font glyphs, or debugging missing or misplaced glyphs.
+description: Build and check resource packs in resourcepacks/<name>/ for this project's Minecraft version - pack.mcmeta and pack formats, item models (custom model data or item model definitions, depending on the version), fonts and font-glyph UIs, sounds, .mcmeta texture animations and shaders. Use whenever creating or changing a resource pack, or when glyphs, models or textures don't show up in game.
 ---
 
 # Resource packs
 
-First draft (Stage 3). It covers what the first vertical slice needed, and every fact marked "26.3" was read from the 26.3 client or checked in game. Item models, sounds, `.mcmeta` animations and shaders aren't covered yet: research them before use, and check `knowledge/` first.
+Resource-pack formats change in almost every Minecraft release. **Never rely on memory for a version's rules.** Use what's proven in `knowledge/`, and run the **research** skill for anything else. This skill says where the version boundaries are and which facts are proven.
 
-## Build and serve
+## Build, serve, gate
 
-`resourcepack_build_and_serve <pack>` validates the JSON and `pack.mcmeta`, compares the pack format with the server's Minecraft version, zips the pack deterministically, computes its SHA-1, serves it on `127.0.0.1:<pack_port>`, and points `server.properties` at it. The mcflow client mod accepts packs only from localhost.
+- `gate_resource_pack <pack>` checks pack.mcmeta and the pack format against the server's own jar, all JSON, every texture, model and font reference (`minecraft:` ones against the client jar), and the bitmap-font rules. It must pass.
+- `resourcepack_build_and_serve <pack>` zips the pack deterministically, computes its SHA-1, serves it on `127.0.0.1:<pack_port>` and points `server.properties` at it. The mcflow client mod accepts packs only from localhost; bots accept them automatically.
 
-## pack.mcmeta
+## Pack format
 
-The pack format comes from the game's `version.json` (`pack_version.resource_major`); 26.3 is **97**. From 1.21.9 onward, use `min_format`/`max_format`:
+- **Don't hardcode it.** The right value is in the server jar's `version.json` (`pack_version.resource_major`). `gate_resource_pack` reads it from there and reports the expected value. Proven: 26.3 → **97**.
+- From 1.21.9 onward, pack.mcmeta uses `min_format`/`max_format`; older versions use a single `pack_format` (and optionally `supported_formats`). Research the exact form for older targets.
 
 ```json
 {"pack": {"description": "…", "min_format": 97, "max_format": 97}}
@@ -21,32 +23,45 @@ The pack format comes from the game's `version.json` (`pack_version.resource_maj
 
 ## Assets must be original
 
-Never copy Mojang textures or font sheets into a pack. Reference vanilla files by id when you need them (`minecraft:font/ascii.png`), or draw your own. Generate textures in code (a `tools/` script) so layouts stay reproducible.
+Never copy Mojang textures, models, fonts or sounds, or art from paid resources, into a pack. Reference vanilla files by id when you need them (`minecraft:font/ascii.png`), or draw your own. Generate textures in code (a script in the plugin's `tools/`) so layouts and mockups stay reproducible.
 
-## Font glyph UIs (26.3)
+## Custom items: depends on the version (research before use)
 
-Custom UIs are bitmap glyphs in a custom font (`assets/<ns>/font/<font>.json`), sent as text with `"font": "<ns>:<font>"`.
-
-- **Bitmap provider:** `{"type": "bitmap", "file": "<ns>:font/x.png", "height": H, "ascent": A, "chars": [...]}`. The texture is split evenly into the `chars` grid.
-- **The ascent can't exceed the height.** The game rejects the provider and draws missing-glyph boxes instead. To place a glyph high up, give it a tall cell with transparent padding below it.
-- **Vertical position:** the glyph's top is `textY + 7 - ascent` (in font units).
-- **Advance (width):** `(int)(0.5 + actualWidth × height / textureHeight) + 1` units, where `actualWidth` is the rightmost opaque column + 1. Measure it from the image; don't guess.
-- **Horizontal placement:** a `space` provider (`{"type": "space", "advances": {"\uF000": 0.25, "\uF010": -0.25}}`) moves the pen. Advances are floats and can be negative. A set of power-of-two spaces in both directions reaches any offset.
-- **Text colour** multiplies the glyph, so draw textures white where you want to tint them. Turn off the drop shadow with `shadow_color` 0 (Adventure `ShadowColor.none()`).
-- **Player faces:** the player-head object component (Adventure `ObjectContents.playerHead(name)`) is 8 units wide and drawn from the text line down. It can't take a font or an ascent, so it pins the layout's vertical position. Offline-mode servers get the skin the client looks up by name.
-
-### Where each HUD text line is drawn (26.3, `Hud`)
-
-| Line | Anchor | Scale |
+| Server version | How a custom item model is chosen | Status here |
 |---|---|---|
-| Title | screen centre, `x = -width/2` (integer division in font units, so an odd width shifts it 2 GUI px right), `y = -10` | ×4 (1 unit = 4 GUI px) |
+| up to 1.21.1 | `CustomModelData` (an integer) on the item, plus `overrides` with a `custom_model_data` predicate in the vanilla item's model JSON | not proven in this workflow |
+| 1.21.2 – 1.21.3 | the `item_model` component can name a model directly; `CustomModelData` overrides still work | not proven |
+| 1.21.4 and later | item model definitions in `assets/<ns>/items/<id>.json`; `custom_model_data` becomes lists of floats, flags, strings and colours read by `select`/`condition`/`range_dispatch` models | not proven |
 
-In the title, give textures 4 texels per unit (height = texture height / 4), so that 1 texel = 1 GUI pixel. The title is centred on its total advance, so end every update at the same total width (add a closing space), or the panel will shift as its contents change.
+Before using any row: check `knowledge/`, then research the exact JSON for the target version, then prove it in game (a screenshot) and record it.
 
-Subtitle, action bar and boss bar anchors haven't been verified yet. Read them from the client (`javap -c` on the unobfuscated 26.x jar) before using them.
+## Fonts and font-glyph UIs (proven on 26.3)
+
+Custom UIs are bitmap glyphs in a custom font (`assets/<ns>/font/<font>.json`), sent as text with `"font": "<ns>:<font>"`. See `knowledge/font-glyph-title-ui.md` and `knowledge/player-head-text-object.md` for the full geometry.
+
+- **Bitmap provider:** `{"type": "bitmap", "file": "<ns>:font/x.png", "height": H, "ascent": A, "chars": [...]}`. The texture is split evenly into the `chars` grid; all rows the same length.
+- **The ascent can't exceed the height.** Otherwise the game rejects the provider and draws missing-glyph boxes. To place a glyph high, give it a tall cell with transparent padding below. (The gate catches this.)
+- **Vertical position:** glyph top = `textY + 7 - ascent` (font units).
+- **Advance:** `(int)(0.5 + actualWidth × height / textureHeight) + 1` units; `actualWidth` = rightmost opaque column + 1. Measure it from the image.
+- **Horizontal placement:** a `space` provider (`{"type": "space", "advances": {"\uF000": 0.25, "\uF010": -0.25}}`). Advances are floats and can be negative; power-of-two spaces both ways reach any offset.
+- **Title line:** drawn at the screen centre, ×4 (1 unit = 4 GUI px), at `x = -width/2` (integer division in units: an odd width sits 2 GUI px right) and `y = -10`. Give textures 4 texels per unit so 1 texel = 1 GUI pixel. End every update at the same total advance, or the panel shifts.
+- Tint by colouring white glyphs; turn off the shadow with `shadow_color` 0.
+- Subtitle, action bar and boss bar anchors aren't proven yet: read them from the client (`javap -c` on the unobfuscated 26.x jar) before use.
+
+## Sounds (research before use)
+
+`assets/<ns>/sounds.json` maps event names to `.ogg` files in `assets/<ns>/sounds/`. Plugins play them by name (`player.playSound(loc, "<ns>:<event>", …)`). Formats (mono for positional sound, Ogg Vorbis) and the `sounds.json` fields: research for the target version.
+
+## Texture animation (research before use)
+
+A `<texture>.png.mcmeta` next to a texture with an `animation` object (`frametime`, `frames`, `interpolate`) animates a vertically stacked strip. Confirm the rules for the target version and prove it in game.
+
+## Shaders (research before use; avoid if possible)
+
+Core shaders (`assets/minecraft/shaders/core/`) change between versions more than anything else in a pack, and a broken one can make the game unusable. Prefer a font, model or texture solution. If a shader is the only way, research the exact target version, keep it minimal, and test it at several GUI scales and on the user's GPU.
 
 ## Checking a UI
 
-- Render a mockup from the same generator the pack uses, and get it approved (the ui-layout flow).
-- Then check it in game with `client_screenshot` at the smallest GUI height you support (240 = 1280×720 at "Auto").
-- Missing-glyph boxes mean an invalid provider (most often ascent > height) or a char missing from the font.
+1. Render a mockup from the same generator the pack uses, and get it approved (**ui-layout**).
+2. `client_screenshot` at the smallest supported GUI height (240 = 1280×720 at "Auto"). Measure positions in the screenshot.
+3. Missing-glyph boxes mean an invalid provider (usually ascent > height) or a char missing from the font. Run `gate_resource_pack` first.

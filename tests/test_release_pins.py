@@ -59,3 +59,20 @@ def test_mcp_json_registers_released_server(tmp_path, monkeypatch):
     scaffold.create(tmp_path, ProjectConfig("p", "26.3", 25, "LadonON/mcflow-knowledge"))
     servers = json.loads((tmp_path / ".mcp.json").read_text())["mcpServers"]
     assert servers["mcflow"] == {"command": "npx", "args": ["-y", url]}
+
+
+def test_vendored_humanizer_matches_its_pin():
+    """The prose humanizer is a copy of blader/humanizer at the pinned commit; keep them equal."""
+    import hashlib
+    from importlib.resources import files
+
+    from mcflow.versions import pins
+
+    pin = pins()["humanizer"]
+    skill = files("mcflow").joinpath("templates/project/.claude/skills/humanizer")
+    assert (
+        hashlib.sha256(skill.joinpath("SKILL.md").read_bytes()).hexdigest() == pin["skill_sha256"]
+    )
+    assert (
+        hashlib.sha256(skill.joinpath("LICENSE").read_bytes()).hexdigest() == pin["license_sha256"]
+    )

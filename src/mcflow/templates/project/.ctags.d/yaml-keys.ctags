@@ -1,0 +1,3 @@
+# mcflow: plugin configs (config.yml, plugin.yml). The Yaml parser only tags anchors; add every key.
+--kinddef-Yaml=k,key,keys
+--regex-Yaml=/^[ \t]*([A-Za-z0-9_.-]+)[ \t]*:/\1/k/

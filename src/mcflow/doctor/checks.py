@@ -164,7 +164,7 @@ def check_ctags(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
     pin = pins()["universal_ctags"]
     fix = _per_os(
         env,
-        windows="winget install UniversalCtags.Ctags",
+        windows="mcflow tools install   (or: winget install UniversalCtags.Ctags)",
         macos="brew install universal-ctags",
         linux=(
             "Debian/Ubuntu: sudo apt-get install -y universal-ctags\n"
@@ -205,10 +205,9 @@ def check_toktoken(env: SystemEnv, ctx: DoctorContext) -> CheckResult:
     install_dir = _per_os(env, r"%USERPROFILE%\.local\bin", "~/.local/bin", "~/.local/bin")
     exe = "toktoken.exe" if env.os_name == "windows" else "toktoken (then chmod +x it)"
     fix = (
-        f"Download TokToken {pin['version']} from its official release:\n  {url}\n"
-        f"Check its SHA-256 is {asset['sha256']}.\n"
-        f"Save it as {exe} in {install_dir}, and make sure that folder is on PATH.\n"
-        "(`mcflow` will automate this in a later release.)"
+        "Run: mcflow tools install\n"
+        f"(or by hand: download {url}, check its SHA-256 is {asset['sha256']}, "
+        f"and save it as {exe} in {install_dir}, on PATH)"
     )
     if env.which("toktoken") is None:
         return CheckResult(name, Status.FAIL, "Not installed.", fix)

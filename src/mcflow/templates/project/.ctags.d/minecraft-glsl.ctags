@@ -1,0 +1,17 @@
+# mcflow: GLSL as Minecraft uses it (core shaders in resource packs). universal-ctags has no GLSL parser.
+--langdef=GLSL
+--map-GLSL=+.fsh
+--map-GLSL=+.vsh
+--map-GLSL=+.glsl
+--kinddef-GLSL=f,function,functions
+--kinddef-GLSL=u,uniform,uniforms
+--kinddef-GLSL=i,input,inputs (in)
+--kinddef-GLSL=o,output,outputs (out)
+--kinddef-GLSL=d,define,macros
+--kinddef-GLSL=s,struct,structs
+--regex-GLSL=/^[ \t]*(void|bool|int|uint|float|double|[biud]?vec[234]|mat[234](x[234])?|sampler[123]D|[A-Z][A-Za-z0-9_]*)[ \t]+([A-Za-z_][A-Za-z0-9_]*)[ \t]*\(/\3/f/
+--regex-GLSL=/^[ \t]*uniform[ \t]+[A-Za-z0-9_]+[ \t]+([A-Za-z_][A-Za-z0-9_]*)/\1/u/
+--regex-GLSL=/^[ \t]*(flat[ \t]+|smooth[ \t]+)?in[ \t]+[A-Za-z0-9_]+[ \t]+([A-Za-z_][A-Za-z0-9_]*)/\2/i/
+--regex-GLSL=/^[ \t]*(flat[ \t]+|smooth[ \t]+)?out[ \t]+[A-Za-z0-9_]+[ \t]+([A-Za-z_][A-Za-z0-9_]*)/\2/o/
+--regex-GLSL=/^[ \t]*#[ \t]*define[ \t]+([A-Za-z_][A-Za-z0-9_]*)/\1/d/
+--regex-GLSL=/^[ \t]*struct[ \t]+([A-Za-z_][A-Za-z0-9_]*)/\1/s/

@@ -16,6 +16,14 @@ minimum_major = 22
 version_marker = "Universal Ctags"
 rejected_marker = "Exuberant Ctags"
 
+[universal_ctags.windows]
+# Official Windows builds (github.com/universal-ctags/ctags-win32). `mcflow tools install` uses it;
+# on macOS and Linux it comes from the package manager.
+version = "p6.2.20261011.0"
+url = "https://github.com/universal-ctags/ctags-win32/releases/download/p6.2.20261011.0/ctags-p6.2.20261011.0-x64.zip"
+sha256 = "2d20e0fb8149e64c6e77d3806a2e56f4d0d0ca5ea20d1b354b26c1d5637a0397"
+license = "GPL-2.0"
+
 [toktoken]
 version = "0.5.0"
 repo = "mauriziofonte/toktoken"
@@ -109,6 +117,11 @@ sha256 = ""
 repo = "blader/humanizer"
 commit = "b48c832f0f809c1b5658edbb838c2521b72f2413"
 license = "MIT"
+# Release 4.0.0 (2026-11-10). Vendored in templates/project/.claude/skills/humanizer/ with its
+# LICENSE; tests check the copies against these sums.
+version = "4.0.0"
+skill_sha256 = "804a119e924ac30295b298213e0b71b3e38b2667b8ef4fb7b69e9246369b9045"
+license_sha256 = "4ac4810254ab36d45419141aeb8e69bf50652cfafe5b2dab947d06d44e5cbf96"
 
 [knowledge]
 default_repo = "LadonON/mcflow-knowledge"

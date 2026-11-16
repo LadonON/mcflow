@@ -106,7 +106,7 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
   2. `PlayerMock.resetTitle()` throws `UnimplementedOperationException`, and an exception in `onDisable` during `unmock()` makes every later test fail with "Already mocking". Event-handler exceptions are only logged, so a test pass count can hide them; check stderr too.
   3. The client centres titles at `-width/2` with integer division in font units, so a 41-unit panel sits 2 GUI px right of true centre.
 
-- **TokToken skips `plugins/` by default (2026-11-15):** its smart filter treats a folder named `plugins/` as vendored dependencies, so a workspace's own plugins weren't indexed. `--full` fixes it, and the workspace instructions now require it. TokToken and universal-ctags are installed by hand under `~/.local/mcflow-tools/` for now; the installer is Stage 5 (task 5.14).
+- **TokToken skipped the workspace's plugins (2026-11-15):** its smart filter treats any folder containing a `build.gradle` (or another package manifest) as vendored code, so every plugin project was skipped (Stage 3 first blamed the folder name `plugins/`; corrected in Stage 5). `--full` fixes it, and the workspace instructions now require it. TokToken and universal-ctags are installed by hand under `~/.local/mcflow-tools/` for now; the installer is Stage 5 (task 5.14).
 - **Player faces on offline test servers are unreliable (2026-11-15):** the same player's face showed up correctly, as a grey placeholder, blank, and black across four runs. The plugin now passes the signed skin when the server has one (always, on online-mode servers).
 
 - **Bots on 26.3 (2026-11-15):** mineflayer 4.39.0 supports up to 26.1, so bots join through ViaBackwards 5.12.2. Two mineflayer bugs (the UUID in the resource-pack reply, and no `tick_end` packet) needed workarounds; with them, every bot check passes. mineflayer 4.39.0 is now an exact dependency of mcflow-server. Details: `docs/research/Stage 4 Bots.md`.
@@ -117,6 +117,9 @@ Source of truth: [BUILD_SPEC.md](BUILD_SPEC.md). Re-read it at the start of ever
 
 - **Quality gates (2026-11-15):** `gate_performance`, `gate_memory`, `gate_thread_safety` and `gate_resource_pack` work; the /menu slice passed all of them live (median tick 5.8 ms with 10 bots in the menu, no leaks over 7 cycles, no async calls, every pack reference present). `mcflow server setup` installs ViaBackwards when bots need it, and `doctor` reports how bots join.
 - **spark uploads (2026-11-15):** Paper's bundled spark uploads some results to spark.lucko.me. One `spark health` report was uploaded during research before this was known; the user was told. mcflow now uses only local-only spark commands, and the live gate test checks spark's activity log for uploads.
+
+- **Stage 5 (2026-11-15):** all eight skills and the four helper agents are in the project template, and CLAUDE.md and AGENTS.md are final. New commands: `mcflow humanize snapshot|check` (a cleanup must keep every passing test and the public API), `mcflow tools install` (TokToken, plus universal-ctags on Windows, from pinned checksummed releases), `mcflow tags` (symbols in pack JSON, `.mcmeta`, GLSL and YAML via mcflow's ctags definitions). The prose humanizer is vendored at its pinned commit. Workspaces get `.toktoken.json`, the real fix for TokToken skipping plugins.
+- **TokToken limits (2026-11-15):** 0.5.0 can't be taught new file extensions (`extra_extensions` only relabels extensions it already discovers). Proposing an upstream change is the user's call (task 5.16a).
 
 ## Open questions
 

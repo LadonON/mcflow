@@ -26,6 +26,14 @@ server_app = typer.Typer(help="Set up the local test server.", no_args_is_help=T
 app.add_typer(server_app, name="server")
 client_app = typer.Typer(help="Install mcflow's client mod (required).", no_args_is_help=True)
 app.add_typer(client_app, name="client")
+humanize_app = typer.Typer(
+    help="Prove a code cleanup changed no behaviour (tests and public API).", no_args_is_help=True
+)
+app.add_typer(humanize_app, name="humanize")
+tools_app = typer.Typer(
+    help="Install the indexing tools (TokToken, universal-ctags).", no_args_is_help=True
+)
+app.add_typer(tools_app, name="tools")
 
 console = Console(soft_wrap=True)
 err = Console(stderr=True, soft_wrap=True)
@@ -259,6 +267,127 @@ def client_install(
     for step in result.steps_for_user:
         console.print(f"  - {step}")
     console.print("  - Sign in with your Microsoft account in the launcher if it asks.")
+
+
+def _humanize_target(project: str) -> tuple[Path, Path, Path | None]:
+    from mcflow.testserver import local
+
+    root, _ = _require_project()
+    project_dir = root / "plugins" / project
+    if not project_dir.is_dir():
+        err.print(f"[red]No plugin project at plugins/{project}/.[/]")
+        raise typer.Exit(1)
+    settings = local.load(root)
+    java_home = Path(settings.java).parent.parent if settings else None
+    return root, project_dir, java_home
+
+
+@humanize_app.command("snapshot")
+def humanize_snapshot(
+    project: Annotated[str, typer.Argument(help="Folder name under plugins/")],
+) -> None:
+    """Before a cleanup: build, test, and record passing tests and the public API."""
+    from mcflow import humanize
+
+    root, project_dir, java_home = _humanize_target(project)
+    try:
+        snap = humanize.take(project_dir, java_home)
+    except humanize.HumanizeError as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    if not snap.build_ok:
+        err.print("[red]The build fails, so there's nothing to compare against. Fix it first.[/]")
+        raise typer.Exit(1)
+    failing = [t for t, s in snap.tests.items() if s == "failed"]
+    humanize.save(humanize.snapshot_path(root, project), snap)
+    console.print(
+        f"Snapshot saved: {sum(s == 'passed' for s in snap.tests.values())} passing tests, "
+        f"{len(snap.api)} public classes."
+    )
+    if failing:
+        console.print(f"[yellow]{len(failing)} tests already fail; they aren't held to passing.[/]")
+
+
+@humanize_app.command("check")
+def humanize_check(
+    project: Annotated[str, typer.Argument(help="Folder name under plugins/")],
+) -> None:
+    """After a cleanup: rebuild, retest and compare with the snapshot. Exits 1 on a difference."""
+    from mcflow import humanize
+
+    root, project_dir, java_home = _humanize_target(project)
+    try:
+        before = humanize.load(humanize.snapshot_path(root, project))
+        after = humanize.take(project_dir, java_home)
+    except humanize.HumanizeError as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    result = humanize.compare(before, after)
+    for label, items in (
+        ("Tests that passed before and don't now", result.broken_tests),
+        ("Tests that no longer exist", result.missing_tests),
+        ("Public API changes", result.api_changes),
+    ):
+        for item in items:
+            console.print(f"[red]{label}:[/] {item}")
+    if result.new_tests:
+        console.print(f"{len(result.new_tests)} new tests (fine).")
+    if not result.ok:
+        raise typer.Exit(1)
+    console.print("[green]Unchanged:[/] every test still passes and the public API is the same.")
+
+
+@app.command()
+def tags(
+    paths: Annotated[
+        list[str] | None,
+        typer.Argument(help="Files or folders (default: resourcepacks/ and plugin resources)"),
+    ] = None,
+    query: Annotated[
+        str | None,
+        typer.Option("--query", "-q", help="Only symbols whose name or scope contains this"),
+    ] = None,
+    as_json: Annotated[bool, typer.Option("--json", help="Machine-readable output")] = False,
+) -> None:
+    """Symbols in pack JSON, .mcmeta, GLSL shaders and YAML configs (files TokToken can't index)."""
+    from mcflow import tags as tagmod
+
+    root, _ = _require_project()
+    try:
+        found = tagmod.run(root, paths or [], query)
+    except tagmod.TagsError as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    if as_json:
+        print(json.dumps([dataclasses.asdict(t) for t in found], indent=2))
+        return
+    for t in found:
+        scope = f" in {t.scope}" if t.scope else ""
+        console.print(f"{t.path}:{t.line}  [bold]{t.name}[/] ({t.kind}{scope})")
+    console.print(f"{len(found)} symbols")
+
+
+@tools_app.command("install")
+def tools_install(
+    directory: Annotated[
+        Path | None, typer.Option("--dir", help="Where to put them (default: ~/.local/bin)")
+    ] = None,
+) -> None:
+    """Download TokToken (and universal-ctags on Windows) from official releases, checked."""
+    from mcflow import platforms, tools
+
+    dest = directory or tools.default_dir()
+    try:
+        result = tools.install(dest, platforms.current_os(), platforms.current_machine())
+    except (tools.ToolsError, OSError) as e:
+        err.print(f"[red]{e}[/]")
+        raise typer.Exit(1) from None
+    for path in result.installed:
+        console.print(f"[green]Installed[/] {path}")
+    for item in result.skipped:
+        console.print(f"Skipped {item}")
+    for note in result.notes:
+        console.print(f"[yellow]{note}[/]")
 
 
 def _not_yet(command: str, stage: str) -> None:

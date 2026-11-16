@@ -19,11 +19,24 @@ EXPECTED_FILES = {
     "CLAUDE.md",
     "AGENTS.md",
     ".mcp.json",
+    ".toktoken.json",
+    ".ctags.d/minecraft-glsl.ctags",
+    ".ctags.d/minecraft-json.ctags",
+    ".ctags.d/yaml-keys.ctags",
     ".gitignore",
     ".claude/skills/code-humanizer/SKILL.md",
+    ".claude/skills/humanizer/LICENSE",
+    ".claude/skills/humanizer/SKILL.md",
+    ".claude/skills/knowledge/SKILL.md",
     ".claude/skills/paper-plugin/SKILL.md",
+    ".claude/skills/research/SKILL.md",
     ".claude/skills/resource-packs/SKILL.md",
-    ".claude/agents/.gitkeep",
+    ".claude/skills/ui-layout/SKILL.md",
+    ".claude/skills/verify/SKILL.md",
+    ".claude/agents/indexer.md",
+    ".claude/agents/researcher.md",
+    ".claude/agents/verifier-output.md",
+    ".claude/agents/verifier-visual.md",
     "assets/README.md",
     "research/README.md",
     "knowledge/README.md",
@@ -95,3 +108,50 @@ def test_unrelated_existing_files_are_fine(tmp_path):
     (tmp_path / "notes.txt").write_text("keep me")
     scaffold.create(tmp_path, CONFIG)
     assert (tmp_path / "notes.txt").read_text() == "keep me"
+
+
+def test_templates_have_no_invisible_characters():
+    """Private-use characters (font-glyph codepoints) must appear in docs as backslash-u escapes.
+
+    Twice a writer turned an escape example into the real, invisible character.
+    """
+    from importlib.resources import files
+
+    def walk(node):
+        for child in node.iterdir():
+            if child.is_dir():
+                yield from walk(child)
+            elif child.name.endswith((".md", ".tmpl", ".json")):
+                yield child
+
+    for f in walk(files("mcflow").joinpath("templates/project")):
+        text = f.read_text(encoding="utf-8")
+        bad = [hex(ord(c)) for c in text if 0xE000 <= ord(c) <= 0xF8FF or c == "�"]
+        assert not bad, f"{f.name}: {bad[:3]}"
+
+
+def test_agents_use_smaller_models_and_name_their_tools():
+    from importlib.resources import files
+
+    agents = files("mcflow").joinpath("templates/project/.claude/agents")
+    models = {}
+    for f in agents.iterdir():
+        head = f.read_text(encoding="utf-8").split("---")[1]
+        fields = dict(line.split(": ", 1) for line in head.strip().splitlines())
+        assert fields["name"] == f.name.removesuffix(".md")
+        assert fields["tools"] and fields["description"]
+        models[fields["name"]] = fields["model"]
+    assert models == {
+        "researcher": "sonnet",
+        "indexer": "haiku",
+        "verifier-visual": "sonnet",
+        "verifier-output": "sonnet",
+    }
+
+
+def test_toktoken_config_indexes_plugins_and_skips_the_server(tmp_path):
+    """TokToken's smart filter treats any folder with a build.gradle as vendored; turn it off."""
+    scaffold.create(tmp_path, CONFIG)
+    index = json.loads((tmp_path / ".toktoken.json").read_text())["index"]
+    assert index["smart_filter"] is False
+    assert "server/" in index["extra_ignore_patterns"]

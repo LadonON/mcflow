@@ -1,34 +1,41 @@
 # ${project_name}: rules for AI coding tools
 
-These are the same rules as `CLAUDE.md`, written for tools without Claude Code's skills and subagents. Where `CLAUDE.md` hands a step to a skill or helper agent, do that step yourself, inline.
-
-<!-- mcflow draft (0.1): some tools named here arrive in later mcflow releases. If one is missing, tell the user which step you can't run. Never skip it silently. -->
+These are the same rules as `CLAUDE.md`, written for tools without Claude Code's skills and subagents. Where `CLAUDE.md` hands a step to a skill or helper agent, do that step yourself, inline. The skills in `.claude/skills/*/SKILL.md` and the agents in `.claude/agents/*.md` are plain Markdown: read them for the details of each step.
 
 ## Project facts
 
 - Target: **Paper ${paper_version}**, which needs **Java ${java_minimum}+** (see `mcflow.toml`).
-- Run `mcflow doctor` before your first build on a machine.
+- Run `mcflow doctor` before your first build on a machine; `mcflow tools install` installs TokToken (and universal-ctags on Windows).
 - Never download a Paper jar. The user puts it in `server/`.
 - First-time setup: `mcflow server setup`, then ask the user about the Minecraft EULA (https://aka.ms/MinecraftEULA) and only with their yes run `mcflow server setup --accept-eula`. Then `mcflow client install`.
 - **mcflow's Fabric client mod is required** for every in-game check. The user starts Minecraft (the Fabric installation for Paper ${paper_version}'s version) from their own launcher, signed in.
+- If your tool supports MCP, use mcflow-server's tools (`server_*`, `plugin_deploy`, `resourcepack_build_and_serve`, `client_*`, `bot_*`, `bot_swarm`, `gate_*`). If not, say which steps you can't run.
 
 ## Task pipeline (every development task, in order)
 
-1. Check `knowledge/` for every API, format and resource-pack feature you'll use. If there's no entry for Paper ${paper_version}, research current official docs and write `research/<Topic>.md` with sources and the date.
-2. Plan. For player-facing UI, get a layout approved first: the user's sketch in `layouts/`, or a mockup you propose there.
+1. Check `knowledge/` for every API, format and resource-pack feature you'll use (an entry applies only if its `minecraft_versions` include Paper ${paper_version}). If there's none, research current official docs and the server and client jars, and write `research/<Topic>.md` with sources and the date.
+2. Plan. For player-facing UI, get a layout approved first: the user's sketch in `layouts/`, or a mockup you render from original assets there, plus a written spec.
 3. Implement.
-4. Verify: build, MockBukkit tests, deploy to the test server (restart, never `/reload`), check the logs for exceptions, check command output and screenshots against the approved layout, then run the load test (spark MSPT before and after) and the join/leave memory check.
-5. Clean up the code you changed: remove comments that restate the code, needless defensive checks, generic names and leftover scaffolding. Match the project's style. Change no behavior.
+4. Verify: build, MockBukkit tests (read the report's stderr too), `gate_resource_pack`, deploy to the test server (restart, never `/reload`), check the logs for exceptions, check command output and screenshots against the approved layout, then `gate_performance`, `gate_memory` and `gate_thread_safety`.
+5. Clean up the code you changed, between `mcflow humanize snapshot <project>` and `mcflow humanize check <project>`: remove comments that restate the code, needless defensive checks, generic names and leftover scaffolding; match the project's style; change no behaviour and no public API. Revert anything the check rejects.
 6. Re-verify: rebuild, rerun the tests and do a quick in-game check.
-7. Re-index: `toktoken index:update --full` (`--full` because the default filter skips `plugins/` as vendored code).
+7. Re-index: `toktoken index:update .` (`.toktoken.json` keeps plugins in the index).
 8. Write proven techniques to `knowledge/` (frontmatter: title, minecraft_versions, pack_format, paper_api_version, verified_by, sources, date).
-9. Present the change with screenshots, test results and the MSPT numbers.
+9. Present the change with screenshots, test results and the tick-time numbers.
 10. Ask whether to share the new knowledge entries (`mcflow kb push`, which opens a pull request).
 
 ## Quality gates
 
-Build clean · MockBukkit tests · no blocking work on the main thread and no Bukkit API calls off it · no exceptions at runtime · no MSPT regression under a bot swarm · no leaked listeners, tasks or per-player data · resource pack valid for this version's `pack_format`, with every referenced asset present.
+Build clean · MockBukkit tests · no blocking work on the main thread and no Bukkit API calls off it · no exceptions at runtime · no tick-time regression under a bot swarm · no leaked listeners, tasks or per-player data · resource pack valid for this version's pack format, with every referenced asset present and valid font providers.
+
+## Never send the user's data anywhere
+
+No uploads to third-party services without the user's yes. Never run `spark health`, a spark profile with `--timeout`, or `spark profiler stop` without `--save-to-file`: they upload to spark.lucko.me.
 
 ## Code search
 
-Use TokToken (MCP tools, or the `toktoken` CLI) before grep or whole-file reads. For languages it can't parse, ask the user before building a parser.
+Use TokToken (MCP tools, or the `toktoken` CLI) before grep or whole-file reads. For resource-pack JSON, `.mcmeta`, GLSL and YAML, which TokToken can't index, use `mcflow tags -q <text>`. For any other language, ask the user before building a parser; try a universal-ctags definition in `.ctags.d/` first.
+
+## Writing for the user
+
+Apply `.claude/skills/humanizer/SKILL.md` to READMEs, changelogs, commit messages and anything else written for the user.

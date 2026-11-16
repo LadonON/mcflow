@@ -1,0 +1,2 @@
+# mcflow: pack.mcmeta and texture .mcmeta files are JSON; parse them with the JSON parser.
+--map-JSON=+.mcmeta

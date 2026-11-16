@@ -1,0 +1,6 @@
+{
+  "index": {
+    "smart_filter": false,
+    "extra_ignore_patterns": ["server/", "build/", ".gradle/", "gradle/", "out/", ".mcflow/"]
+  }
+}
