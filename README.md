@@ -6,6 +6,11 @@ mcflow sets up Claude Code (and other AI coding tools) to build Paper plugins an
 
 New here? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md). What works on which OS and CPU is in [docs/PLATFORMS.md](docs/PLATFORMS.md).
 
+## Examples 
+Each of these projects are plugin + resource packs created with mcflow. 
+![PayPing](https://drive.google.com/uc?export=download&id=1dC2t0Kmj-ootYx_X_N6L3BlvKUm9b85O)
+More to come!
+
 ## Install
 
 You need Python 3.11 or newer and [pipx](https://pipx.pypa.io/).
